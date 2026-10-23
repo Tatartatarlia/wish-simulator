@@ -748,6 +748,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   cursor: pointer;
 }
 
+.combo-list button small { float: right; color: #8b735b; font-size: 12px; }
+
 .combo-list button:hover,
 .combo-list button[aria-selected='true'] { background: #f3e2b8; }
 

@@ -1,7 +1,17 @@
 import { FOUR_STAR_CHARACTERS, buildPool, defaultPool, fourStarRoster } from '../data/banner.ts'
 import { catalogExtras, emptyCatalog, mergeCatalog } from '../data/catalog.ts'
 import { addWeapon, deleteCharacter, deleteWeapon, registerFourCharacter } from '../data/roster.ts'
-import { buildWeaponPool, defaultWeaponPool, emptyRosterEdits, fourStarWeapons } from '../data/weapons.ts'
+import {
+  LIMITED_FOUR_WEAPONS,
+  LIMITED_FIVE_WEAPONS,
+  STANDARD_FIVE_WEAPONS,
+  buildWeaponPool,
+  defaultWeaponPool,
+  emptyRosterEdits,
+  fourStarWeapons,
+  selectableFiveWeapons,
+  selectableFourWeapons,
+} from '../data/weapons.ts'
 import { createWishState, grantWeapon, pullOnce, refinementStacks } from './gacha.ts'
 import { createWeaponState, pullWeaponOnce } from './weaponGacha.ts'
 import type { FiveKind, WishState } from './types.ts'
@@ -209,6 +219,26 @@ function testWeaponBanner(): void {
   assert(pity.records.length > 0, '连续落空也应在 80 抽内出五星')
 }
 
+function testWeaponRoster(): void {
+  const edits = emptyRosterEdits()
+  const pool = buildWeaponPool(defaultWeaponPool, edits, fourStarRoster())
+  assert(defaultWeaponPool.upFives.join(',') === '苍耀,香韵奏者', '默认五星 UP 仍是苍耀和香韵奏者')
+  assert(defaultWeaponPool.upFours.join(',') === '弥坚骨,祭礼大剑,西风长枪,流浪乐章,祭礼弓', '默认四星 UP 不变')
+  assert(STANDARD_FIVE_WEAPONS.length === 10, '常驻五星武器应为 10 件')
+  assert(LIMITED_FIVE_WEAPONS.length === 65, '限定五星武器数量')
+  assert(LIMITED_FOUR_WEAPONS.length === 27, '限定四星武器数量')
+  assert(selectableFiveWeapons(edits).length === 75, '五星 UP 应能选到全部常驻和限定')
+  assert(selectableFourWeapons(edits).includes('暗巷闪光') && selectableFourWeapons(edits).includes('祭礼剑'), '四星 UP 应能选常驻和限定')
+  assert(!pool.standardFives.includes('雾切之回光') && !pool.standardFives.includes('灾悔') && !pool.standardFives.includes('星锋剑'), '限定五星不应进入常驻歪池')
+  assert(pool.standardFives.includes('风鹰剑'), '没被选为 UP 的常驻五星仍在歪池')
+  assert(!pool.offBannerWeapons.includes('暗巷闪光') && !pool.offBannerWeapons.includes('弥坚骨'), '限定四星不应进入常驻四星池')
+  assert(pool.offBannerWeapons.includes('祭礼剑'), '常驻四星仍在武器池')
+  const characterWeapons = buildPool(defaultPool, fourStarRoster(), edits).fourWeapons
+  assert(!characterWeapons.includes('暗巷闪光') && !characterWeapons.includes('弥坚骨'), '限定四星不应出现在角色池')
+  const promoted = buildWeaponPool({ ...defaultWeaponPool, upFives: ['风鹰剑', '雾切之回光'] }, edits, fourStarRoster())
+  assert(!promoted.standardFives.includes('风鹰剑') && !promoted.standardFives.includes('雾切之回光') && promoted.standardFives.includes('天空之刃'), '选为 UP 的常驻五星要离开歪池，限定五星仍然不进歪池')
+}
+
 function testDeletedFourReturns(): void {
   const catalog = mergeCatalog(emptyCatalog())
   const extra = catalog.fours.map((item) => item.name)
@@ -261,6 +291,7 @@ function testBuiltinTitles(): void {
 }
 
 testBuiltinTitles()
+testWeaponRoster()
 testDeletedFourReturns()
 testHardPityAndRadiance()
 testWeaponBanner()

@@ -1,8 +1,64 @@
 import { useState } from 'react'
 import { addWeapon, deleteWeapon } from '../data/roster.ts'
-import { WEAPON_TYPES, buildWeaponPool, fourStarWeapons, threeStarWeapons } from '../data/weapons.ts'
+import {
+  WEAPON_TYPES,
+  buildWeaponPool,
+  selectableFiveWeapons,
+  selectableFourWeapons,
+  threeStarWeapons,
+  weaponPoolNote,
+} from '../data/weapons.ts'
 import type { CharacterCatalog, RosterEdits, WeaponPoolConfig } from '../lib/types.ts'
 import { Modal } from './Modal.tsx'
+
+function WeaponNameField({
+  value,
+  names,
+  listId,
+  onChange,
+}: {
+  value: string
+  names: readonly string[]
+  listId: string
+  onChange: (value: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="combo">
+      <input
+        value={value}
+        role="combobox"
+        aria-expanded={open}
+        aria-autocomplete="list"
+        aria-controls={listId}
+        onChange={(event) => onChange(event.target.value)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+      />
+      {open && names.length > 0 && (
+        <ul className="combo-list" id={listId} role="listbox">
+          {names.map((name) => (
+            <li key={name} role="presentation">
+              <button
+                type="button"
+                role="option"
+                aria-selected={name === value}
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  onChange(name)
+                  setOpen(false)
+                }}
+              >
+                {name}
+                <small>{weaponPoolNote(name)}</small>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 function namesOf(config: WeaponPoolConfig): string[] {
   return [...config.upFives, ...config.upFours]
@@ -35,6 +91,8 @@ export function WeaponDetailModal({
   const [pending, setPending] = useState<WeaponPoolConfig | null>(null)
 
   const resolved = buildWeaponPool(draft, edits, fourCharacters)
+  const fiveNames = selectableFiveWeapons(edits)
+  const fourNames = selectableFourWeapons(edits)
   const setFive = (index: 0 | 1, value: string) => {
     setSaved(false)
     const upFives = [...draft.upFives] as WeaponPoolConfig['upFives']
@@ -62,6 +120,18 @@ export function WeaponDetailModal({
       setSaved(false)
       return
     }
+    const fiveChoices = new Set(selectableFiveWeapons(edits))
+    const fourChoices = new Set(selectableFourWeapons(edits))
+    if (upFives.some((name) => !fiveChoices.has(name))) {
+      setError('五星 UP 要使用武器名单里的名字。常驻和限定都可以，不在名单里的请先在下面添加。')
+      setSaved(false)
+      return
+    }
+    if (upFours.some((name) => !fourChoices.has(name))) {
+      setError('四星 UP 要使用常驻或限定四星的名字。不在名单里的请先在下面添加。')
+      setSaved(false)
+      return
+    }
     const next: WeaponPoolConfig = {
       eventName: draft.eventName.trim(),
       upFives: upFives as WeaponPoolConfig['upFives'],
@@ -77,6 +147,9 @@ export function WeaponDetailModal({
   }
 
   const apply = (next: WeaponPoolConfig) => {
+    const picked = new Set([...next.upFives, ...next.upFours])
+    const removedWeapons = edits.removedWeapons.filter((name) => !picked.has(name))
+    if (removedWeapons.length !== edits.removedWeapons.length) onEdits({ ...edits, removedWeapons })
     setDraft(next)
     setPending(null)
     setError('')
@@ -133,7 +206,7 @@ export function WeaponDetailModal({
 
       <section className="editor">
         <h3>修改本期 UP</h3>
-        <p className="fine">两件五星、五件四星。定轨只能选当前的五星 UP。这里改动定轨时会先询问，确认后才清空命定值。</p>
+        <p className="fine">两件五星、五件四星。五星可以从常驻和限定里选，也可以自己输入名单里已有的名字，下拉按名字第一个字的拼音排序。四星可以选常驻，也可以选只在武器池 UP 出现的限定四星。不在名单里的武器要先在下面添加。定轨只能选当前的五星 UP。这里改动定轨时会先询问，确认后才清空命定值。</p>
         <div className="editor-grid">
           <label>
             活动名称
@@ -157,13 +230,15 @@ export function WeaponDetailModal({
           {draft.upFives.map((name, index) => (
             <label key={`five-${index}`}>
               五星 UP {index + 1}
-              <input value={name} onChange={(event) => setFive(index as 0 | 1, event.target.value)} />
+              <WeaponNameField listId={`weapon-five-${index}`} names={fiveNames} value={name} onChange={(value) => setFive(index as 0 | 1, value)} />
+              {weaponPoolNote(name) && <span className="field-hint hint-match">{weaponPoolNote(name)}</span>}
             </label>
           ))}
           {draft.upFours.map((name, index) => (
             <label key={`four-${index}`}>
               四星 UP {index + 1}
-              <input value={name} onChange={(event) => setFour(index, event.target.value)} />
+              <WeaponNameField listId={`weapon-four-${index}`} names={fourNames} value={name} onChange={(value) => setFour(index, value)} />
+              {weaponPoolNote(name) && <span className="field-hint hint-match">{weaponPoolNote(name)}</span>}
             </label>
           ))}
         </div>
@@ -226,8 +301,8 @@ export function WeaponDetailModal({
           {resolved.standardFives.map((name) => (
             <li key={`std-${name}`}><b>{name}</b><span>五星常驻</span></li>
           ))}
-          {fourStarWeapons(edits).filter((name) => !draft.upFours.includes(name)).map((name) => (
-            <li key={`four-${name}`}><b>{name}</b><span>四星武器</span></li>
+          {resolved.offBannerWeapons.map((name) => (
+            <li key={`four-${name}`}><b>{name}</b><span>四星武器{WEAPON_TYPES[name] ? ` · ${WEAPON_TYPES[name]}` : ''}</span></li>
           ))}
           {threeStarWeapons(edits).map((name) => (
             <li key={`three-${name}`}><b>{name}</b><span>三星武器</span></li>
