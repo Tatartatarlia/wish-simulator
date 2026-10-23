@@ -81,22 +81,50 @@ function CharacterGrid({ characters, catalog }: { characters: OwnedCharacter[]; 
   )
 }
 
-function WeaponGrid({ weapons }: { weapons: OwnedWeapon[] }) {
-  const cards = weapons.flatMap((weapon) =>
-    refinementStacks(weapon.copies).map((rank, index) => ({ weapon, rank, index })),
-  )
+type WeaponCard = {
+  key: string
+  weapon: OwnedWeapon
+  rank: number
+  /** 三星精5合并后的把数。四星、五星以及不满精5的三星不使用。 */
+  count: number | null
+}
+
+function weaponCards(weapon: OwnedWeapon, groupThrees: boolean): WeaponCard[] {
+  if (!groupThrees) {
+    return refinementStacks(weapon.copies).map((rank, index) => ({
+      key: `${weapon.name}-${index}`,
+      weapon,
+      rank,
+      count: null,
+    }))
+  }
+  const total = Math.max(0, Math.floor(weapon.copies))
+  const full = Math.floor(total / 5)
+  const remainder = total % 5
+  const cards: WeaponCard[] = []
+  if (full > 0) cards.push({ key: `${weapon.name}-full`, weapon, rank: 5, count: full })
+  if (remainder > 0) cards.push({ key: `${weapon.name}-partial`, weapon, rank: remainder, count: null })
+  return cards
+}
+
+function WeaponGrid({ weapons, groupThrees = false }: { weapons: OwnedWeapon[]; groupThrees?: boolean }) {
+  const cards = weapons.flatMap((weapon) => weaponCards(weapon, groupThrees))
   if (cards.length === 0) return <p className="empty">还没有抽到。</p>
   return (
     <div className="roster-grid">
-      {cards.map(({ weapon, rank, index }) => (
-        <article key={`${weapon.name}-${index}`} className={`roster-card rarity-${weapon.rarity}`}>
-          <div className="stars" aria-label={`${weapon.rarity}星`}>
-            {'★'.repeat(weapon.rarity)}
+      {cards.map((card) => (
+        <article
+          key={card.key}
+          className={`roster-card rarity-${card.weapon.rarity}`}
+          aria-label={card.count === null ? `${card.weapon.name} 精${card.rank}` : `${card.weapon.name} 精5 × ${card.count}`}
+        >
+          <div className="stars" aria-label={`${card.weapon.rarity}星`}>
+            {'★'.repeat(card.weapon.rarity)}
           </div>
-          <h3>{weapon.name}</h3>
+          <h3>{card.weapon.name}</h3>
           <p>
-            精炼 <b>精{rank}</b>
-            <span> / 5</span>
+            精炼 <b>{card.count === null ? `精${card.rank}` : `精5 × ${card.count}`}</b>
+            {card.count === null && <span> / 5</span>}
           </p>
         </article>
       ))}
@@ -107,7 +135,7 @@ function WeaponGrid({ weapons }: { weapons: OwnedWeapon[] }) {
 function stackCount(weapons: OwnedWeapon[], rarity: 3 | 4 | 5): number {
   return weapons
     .filter((weapon) => weapon.rarity === rarity)
-    .reduce((sum, weapon) => sum + refinementStacks(weapon.copies).length, 0)
+    .reduce((sum, weapon) => sum + weaponCards(weapon, rarity === 3).length, 0)
 }
 
 export function RosterModal({
@@ -205,7 +233,7 @@ export function RosterModal({
             </div>
           </div>
           <p className="fine">
-            第一把是精1，重复抽到同一把武器会提高精炼，精5封顶。超过的数量另起一把，例如 2 把苍耀显示精2，7 把苍耀显示 1 把精5、1 把精2。
+            第一把是精1，重复抽到同一把武器会提高精炼，精5封顶。四星和五星超过精5就另起一把，例如 7 把苍耀显示 1 把精5、1 把精2。三星的精5合并成一张卡，写明有多少把；不满精5的另外一张。
           </p>
           <section className="roster-block">
             <h3>五星</h3>
@@ -217,7 +245,7 @@ export function RosterModal({
           </section>
           <section className="roster-block">
             <h3>三星</h3>
-            <WeaponGrid weapons={weaponThrees} />
+            <WeaponGrid weapons={weaponThrees} groupThrees />
           </section>
         </>
       )}
