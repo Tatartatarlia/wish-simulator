@@ -353,6 +353,7 @@ export default function App() {
       {modal === 'roster' && (
         <RosterModal
           state={state}
+          catalog={catalog}
           onClose={() => setModal(null)}
           onClearCharacters={() => setState((current) => ({ ...createWishState(), ownedWeapons: current.ownedWeapons }))}
           onClearWeapons={() => {

@@ -24,10 +24,8 @@ function portraitsPlugin(): Plugin {
       await runOptimize()
     },
     configureServer(server) {
-      const sourceDir = path.resolve('portraits-src')
-      mkdirSync(sourceDir, { recursive: true })
       let timer: NodeJS.Timeout | undefined
-      const watcher = watch(sourceDir, () => {
+      const schedule = () => {
         clearTimeout(timer)
         timer = setTimeout(() => {
           void runOptimize()
@@ -36,8 +34,13 @@ function portraitsPlugin(): Plugin {
               server.config.logger.error(error instanceof Error ? error.message : String(error))
             })
         }, 200)
-      })
-      server.httpServer?.on('close', () => watcher.close())
+      }
+      for (const sourceDir of ['portraits-src', 'id-photos-src']) {
+        const directory = path.resolve(sourceDir)
+        mkdirSync(directory, { recursive: true })
+        const watcher = watch(directory, schedule)
+        server.httpServer?.on('close', () => watcher.close())
+      }
     },
   }
 }

@@ -170,6 +170,22 @@ export function findFour(catalog: CharacterCatalog, name: string): FourProfile |
   return catalog.fours.find((item) => item.name === trimmed)
 }
 
+const STANDARD_FIVE_ELEMENTS: Readonly<Record<string, string>> = {
+  梦见月瑞希: '风',
+  迪希雅: '火',
+  提纳里: '草',
+  刻晴: '雷',
+  莫娜: '水',
+  七七: '冰',
+  迪卢克: '火',
+  琴: '风',
+}
+
+export function characterElement(catalog: CharacterCatalog, name: string): string {
+  const trimmed = name.trim()
+  return findFive(catalog, trimmed)?.element ?? findFour(catalog, trimmed)?.element ?? STANDARD_FIVE_ELEMENTS[trimmed] ?? ''
+}
+
 export function fiveHint(catalog: CharacterCatalog, name: string): { tone: 'idle' | 'match' | 'miss'; text: string } {
   const trimmed = name.trim()
   if (!trimmed) {

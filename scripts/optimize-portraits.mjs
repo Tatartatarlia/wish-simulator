@@ -4,15 +4,9 @@ import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const sourceDir = path.join(root, 'portraits-src')
-const outputDir = path.join(root, 'public', 'portraits')
 const extensions = new Set(['.png', '.jpg', '.jpeg', '.webp'])
 
-/** 立绘在卡面上大约铺满右半边。限制长边，避免把小图放大，也把大幅原图压下来。 */
-const maxWidth = 1280
-const maxHeight = 860
-
-export async function optimizePortraits() {
+async function optimizeFolder(sourceDir, outputDir, maxWidth, maxHeight) {
   await mkdir(sourceDir, { recursive: true })
   await mkdir(outputDir, { recursive: true })
   const entries = await readdir(sourceDir)
@@ -41,6 +35,23 @@ export async function optimizePortraits() {
   }
 
   return written
+}
+
+/** 立绘铺在卡池右侧，证件照显示在仓库方框里。小图不放大。 */
+export async function optimizePortraits() {
+  const portraits = await optimizeFolder(
+    path.join(root, 'portraits-src'),
+    path.join(root, 'public', 'portraits'),
+    1280,
+    860,
+  )
+  const photos = await optimizeFolder(
+    path.join(root, 'id-photos-src'),
+    path.join(root, 'public', 'id-photos'),
+    384,
+    384,
+  )
+  return portraits + photos
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
