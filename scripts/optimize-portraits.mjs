@@ -6,7 +6,7 @@ import sharp from 'sharp'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const extensions = new Set(['.png', '.jpg', '.jpeg', '.webp'])
 
-async function optimizeFolder(sourceDir, outputDir, maxWidth, maxHeight) {
+async function optimizeFolder(sourceDir, outputDir, maxWidth, maxHeight, trimAlpha) {
   await mkdir(sourceDir, { recursive: true })
   await mkdir(outputDir, { recursive: true })
   const entries = await readdir(sourceDir)
@@ -26,7 +26,7 @@ async function optimizeFolder(sourceDir, outputDir, maxWidth, maxHeight) {
 
     const meta = await sharp(sourcePath).rotate().metadata()
     let pipeline = sharp(sourcePath).rotate()
-    if (meta.hasAlpha) pipeline = pipeline.trim({ threshold: 10 })
+    if (trimAlpha && meta.hasAlpha) pipeline = pipeline.trim({ threshold: 10 })
     await pipeline
       .resize({ width: maxWidth, height: maxHeight, fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 72, effort: 5, alphaQuality: 75 })
@@ -44,12 +44,14 @@ export async function optimizePortraits() {
     path.join(root, 'public', 'portraits'),
     1280,
     860,
+    true,
   )
   const photos = await optimizeFolder(
     path.join(root, 'id-photos-src'),
     path.join(root, 'public', 'id-photos'),
     384,
     384,
+    false,
   )
   return portraits + photos
 }
