@@ -173,7 +173,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .event-note { color: rgba(223, 236, 255, 0.78); }
 
 .hero-card {
-  right: 214px;
+  right: 18px;
   bottom: 18px;
 }
 
@@ -220,13 +220,18 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .char-title { margin-top: 2px; color: #d7e8ff; font-size: 14px; }
 
 .four-column {
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
+  left: 28px;
+  right: auto;
+  bottom: 16px;
+  top: auto;
+  transform: none;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: 10px;
-  width: 196px;
+  width: max-content;
+  max-width: calc(100% - 280px);
 }
 
 .four-card {
@@ -903,11 +908,11 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .topbar, .dock { flex-wrap: wrap; }
   .brand, .wallet { min-width: 0; }
   .banner-switch { order: 3; }
-  .hero-card { right: 8px; bottom: 78px; }
+  .hero-card { right: 8px; bottom: 12px; }
   .banner-copy h1 { font-size: clamp(28px, 8vw, 46px); letter-spacing: 0.06em; }
   .char-name { font-size: 32px; }
   .portrait { height: 68%; max-width: 64%; }
-  .four-column { top: auto; bottom: 12px; transform: none; width: auto; flex-direction: row; }
+  .four-column { left: 8px; bottom: 8px; max-width: 46%; flex-direction: column; align-items: stretch; gap: 6px; }
   .wish-actions { flex: 1 1 100%; min-width: 0; gap: 8px; }
   .wish-btn { min-width: 0; flex: 1 1 0; height: 64px; padding: 0 8px; }
   .wish-title { font-size: 17px; letter-spacing: 0.04em; }
@@ -959,21 +964,21 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .result-actions .wish-btn { flex: 0 1 200px; min-width: 148px; height: 52px; }
 }
 
-.portrait.portrait-tartaglia {
-  height: 214%;
-  max-width: none;
-  top: 52%;
-  right: -12%;
+.portrait.portrait-close {
+  height: 124%;
+  max-width: 84%;
+  top: 50%;
+  right: 2%;
   transform: translateY(-50%);
   object-position: center center;
 }
 
 @media (max-width: 980px) {
-  .portrait.portrait-tartaglia {
-    height: 100%;
+  .portrait.portrait-close {
+    height: 84%;
     width: auto;
-    max-width: 92%;
-    top: 0;
+    max-width: 72%;
+    top: 4%;
     right: 0;
     transform: none;
     object-fit: contain;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 const extensions = ['webp', 'png'] as const
+const closePortraitNames = new Set(['芙宁娜', '纳西妲', '达达利亚'])
 
 function portraitUrl(name: string, extension: (typeof extensions)[number]): string {
   const base = import.meta.env.BASE_URL
@@ -26,7 +27,7 @@ function PortraitImage({ name }: { name: string }) {
 
   return (
     <img
-      className={name === '达达利亚' ? 'portrait portrait-tartaglia' : 'portrait'}
+      className={closePortraitNames.has(name) ? 'portrait portrait-close' : 'portrait'}
       src={portraitUrl(name, extension)}
       alt=""
       decoding="async"
