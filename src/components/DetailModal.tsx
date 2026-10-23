@@ -12,6 +12,7 @@ import { deleteCharacter, deleteWeapon, registerFourCharacter, restoreCharacter 
 import { weaponRarityOf } from '../data/weapons.ts'
 import type { CharacterCatalog, PoolConfig, RosterEdits, WeaponPoolConfig } from '../lib/types.ts'
 import { Modal } from './Modal.tsx'
+import { PortraitUpload } from './PortraitUpload.tsx'
 
 type Row = { name: string; type: string; up?: boolean }
 
@@ -392,6 +393,7 @@ export function DetailModal({
             <input value={fiveProfile ? fiveProfile.element : draft.upFive.element} disabled={Boolean(fiveProfile)} onChange={(event) => { setSaved(false); setDraft({ ...draft, upFive: { ...draft.upFive, element: event.target.value } }) }} />
           </label>
           <p className={`field-hint hint-${fiveNote.tone}`}>{fiveNote.text}</p>
+          <PortraitUpload name={draft.upFive.name} />
           {draft.upFours.map((item, index) => {
             const profile = findFour(catalog, item.name)
             const editing = editingFour[index] === true
@@ -459,7 +461,7 @@ export function DetailModal({
 
       <section className="editor">
         <h3>添加角色</h3>
-        <p className="fine">新角色按名字登记一次。五星要填活动名称，四星不用。已有四星也可以在这里补称号；如果之前被删掉了，补上后会回到卡池。五星立绘可以以后再放，文件名用角色名即可。</p>
+        <p className="fine">新角色按名字登记一次。五星要填活动名称，四星不用。已有四星也可以在这里补称号；如果之前被删掉了，补上后会回到卡池。五星也可以在上面直接上传立绘。自带立绘仍按角色名放在 portraits-src，上传的图片不能把它删掉。</p>
         <div className="seg add-star">
           <button type="button" className={star === 5 ? 'on' : ''} onClick={() => { setStar(5); setAddError(''); setAddNote('') }}>
             五星

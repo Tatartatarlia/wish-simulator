@@ -766,7 +766,41 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 
 .field-hint { margin: 0; line-height: 1.5; }
 
-.editor-grid > .field-hint, .four-edit .field-hint { grid-column: 1 / -1; }
+.editor-grid > .field-hint, .four-edit .field-hint, .portrait-upload { grid-column: 1 / -1; }
+
+.portrait-upload { display: flex; gap: 14px; align-items: center; }
+
+.portrait-preview-frame {
+  flex: 0 0 112px;
+  width: 112px;
+  height: 148px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  color: #d5e4f6;
+  font-size: 12px;
+  background: #142033;
+}
+
+.portrait-preview-frame img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.portrait-upload-copy { min-width: 0; }
+
+.portrait-upload-copy .fine { margin: 0; }
+
+label.text-btn { position: relative; cursor: pointer; }
+
+label.text-btn input[type='file'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+}
+
+label.text-btn.is-disabled { opacity: 0.55; pointer-events: none; }
 
 .hint-match { color: #2d6a4f; }
 
