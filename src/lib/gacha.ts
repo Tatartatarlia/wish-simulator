@@ -56,7 +56,7 @@ export function grantWeapon(state: WishState, result: PullResult): WishState {
 
 const CONSTELLATION_CAP = 6
 
-export function grantCharacter(state: WishState, result: PullResult): { state: WishState; result: PullResult } {
+export function grantCharacter(state: WishState, result: PullResult, stampRecord = true): { state: WishState; result: PullResult } {
   if (result.itemType !== 'character' || result.rarity === 3) return { state, result }
   const rarity = result.rarity
 
@@ -81,7 +81,7 @@ export function grantCharacter(state: WishState, result: PullResult): { state: W
   }
 
   const records =
-    result.rarity === 5
+    stampRecord && result.rarity === 5
       ? state.records.map((record, index) =>
           index === state.records.length - 1 ? { ...record, constellation, masterless: gainedMasterless } : record,
         )

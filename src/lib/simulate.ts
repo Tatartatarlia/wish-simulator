@@ -1,4 +1,5 @@
-import { FOUR_STAR_CHARACTERS, buildPool, defaultPool, fourStarRoster } from '../data/banner.ts'
+import { FOUR_STAR_CHARACTERS, STARTER_NAMES, buildPool, defaultPool, fourStarRoster } from '../data/banner.ts'
+import { buildStandardPool } from '../data/standard.ts'
 import { catalogExtras, emptyCatalog, mergeCatalog } from '../data/catalog.ts'
 import { addWeapon, deleteCharacter, deleteWeapon, registerFourCharacter } from '../data/roster.ts'
 import {
@@ -13,6 +14,7 @@ import {
   selectableFourWeapons,
 } from '../data/weapons.ts'
 import { createWishState, grantWeapon, pullOnce, refinementStacks } from './gacha.ts'
+import { createStandardState, pullStandardOnce } from './standardGacha.ts'
 import { createWeaponState, pullWeaponOnce } from './weaponGacha.ts'
 import type { FiveKind, WishState } from './types.ts'
 
@@ -225,9 +227,9 @@ function testWeaponRoster(): void {
   assert(defaultWeaponPool.upFives.join(',') === '苍耀,香韵奏者', '默认五星 UP 仍是苍耀和香韵奏者')
   assert(defaultWeaponPool.upFours.join(',') === '弥坚骨,祭礼大剑,西风长枪,流浪乐章,祭礼弓', '默认四星 UP 不变')
   assert(STANDARD_FIVE_WEAPONS.length === 10, '常驻五星武器应为 10 件')
-  assert(LIMITED_FIVE_WEAPONS.length === 65, '限定五星武器数量')
+  assert(LIMITED_FIVE_WEAPONS.length === 64, '限定五星武器数量')
   assert(LIMITED_FOUR_WEAPONS.length === 27, '限定四星武器数量')
-  assert(selectableFiveWeapons(edits).length === 75, '五星 UP 应能选到全部常驻和限定')
+  assert(selectableFiveWeapons(edits).length === 74, '五星 UP 应能选到全部常驻和限定')
   assert(selectableFourWeapons(edits).includes('暗巷闪光') && selectableFourWeapons(edits).includes('祭礼剑'), '四星 UP 应能选常驻和限定')
   assert(!pool.standardFives.includes('雾切之回光') && !pool.standardFives.includes('灾悔') && !pool.standardFives.includes('星锋剑'), '限定五星不应进入常驻歪池')
   assert(pool.standardFives.includes('风鹰剑'), '没被选为 UP 的常驻五星仍在歪池')
@@ -280,7 +282,9 @@ function testBuiltinTitles(): void {
   const catalog = mergeCatalog(emptyCatalog())
   const roster = new Set(FOUR_STAR_CHARACTERS)
   const profiled = new Set(catalog.fours.map((item) => item.name))
-  assert(roster.size === profiled.size && [...roster].every((name) => profiled.has(name)), '每个四星角色都应有称号和元素')
+  assert([...roster].every((name) => profiled.has(name)), '每个四星角色都应有称号和元素')
+  assert(STARTER_NAMES.every((name) => profiled.has(name)), '御三家应有称号和元素')
+  assert(!fourStarRoster([...profiled]).some((name) => (STARTER_NAMES as readonly string[]).includes(name)), '御三家不应进入角色活动祈愿的四星名单')
   const tartaglia = catalog.fives.find((item) => item.name === '达达利亚')
   assert(tartaglia?.eventName === '暂别冬都' && tartaglia.title === '「公子」' && tartaglia.element === '水', '达达利亚应保留卡池名和称号引号')
   const escoffier = catalog.fives.find((item) => item.name === '爱可菲')
@@ -290,6 +294,55 @@ function testBuiltinTitles(): void {
   assert(defaultPool.upFours.map((item) => item.name).join(',') === '塔利雅,坎蒂丝,米卡', '默认四星 UP 不变')
 }
 
+function testStandardBanner(): void {
+  const catalog = mergeCatalog(emptyCatalog())
+  const names = catalog.fours.map((item) => item.name)
+  const pool = buildStandardPool([], [], names)
+  assert(pool.fiveCharacters.includes('莫娜') && pool.fiveCharacters.includes('琴'), '常驻五星角色应在常驻池')
+  assert(pool.fiveWeapons.includes('天空之脊') && pool.fiveWeapons.length === 10, '常驻五星武器应在常驻池')
+  assert(pool.fourCharacters.includes('安柏') && pool.fourCharacters.includes('凯亚') && pool.fourCharacters.includes('丽莎'), '御三家应在常驻四星角色里')
+  assert(pool.fourWeapons.includes('祭礼剑') && !pool.fourWeapons.includes('弥坚骨'), '常驻池只有常驻四星武器')
+  assert(!buildPool(defaultPool, names).offBannerFours.includes('安柏'), '御三家不应进入角色活动祈愿')
+  assert(!fourStarRoster(names).includes('丽莎'), '御三家不应进入武器祈愿的四星角色')
+
+  const characterSide = pullStandardOnce(createStandardState(), createWishState(), pool, scripted([0, 0, 0]))
+  assert(characterSide.result.rarity === 5 && characterSide.result.itemType === 'character', '随机数靠前时应出五星角色')
+  assert(characterSide.result.fiveKind === undefined, '常驻五星不记歪或 UP')
+  assert(characterSide.result.pity === 1, '第一发出金间隔应从第 1 抽算起')
+  assert(characterSide.owned.totalPulls === 0 && characterSide.owned.records.length === 0, '常驻池不应改写角色池记录')
+  assert(characterSide.owned.owned.some((item) => item.name === characterSide.result.name), '常驻五星角色应进入仓库')
+
+  const weaponSide = pullStandardOnce(createStandardState(), createWishState(), pool, scripted([0, 0.5, 0]))
+  assert(weaponSide.result.rarity === 5 && weaponSide.result.itemType === 'weapon', '五星的后一半应是武器')
+  assert(pool.fiveWeapons.includes(weaponSide.result.name), '常驻五星武器应来自常驻武器名单')
+
+  const starterPool = { ...pool, fourCharacters: ['安柏'] }
+  const starter = pullStandardOnce(createStandardState(), createWishState(), starterPool, scripted([0.02, 0, 0]))
+  assert(starter.result.name === '安柏', '四星角色侧应能抽到安柏')
+  assert(starter.standard.starterRecords[0]?.pity === 1, '第一发御三家间隔应从第 1 抽算起')
+  const afterGold = pullStandardOnce(characterSide.standard, characterSide.owned, starterPool, scripted([0.02, 0, 0]))
+  assert(afterGold.standard.starterRecords[0]?.pity === 2, '出金那一抽也算进御三家间隔')
+  assert(afterGold.standard.records.length === 1, '抽到御三家不应再记一条出金')
+
+  let standard = createStandardState()
+  let owned = createWishState()
+  let characterCount = 0
+  for (let pull = 0; pull < 4000; pull += 1) {
+    const step = pullStandardOnce(standard, owned, pool)
+    standard = step.standard
+    owned = step.owned
+    if (step.result.rarity === 5 && step.result.itemType === 'character') characterCount += 1
+    assert(standard.fivePity < 90, '常驻五星保底超过 89')
+    assert(standard.fourPity < 10, '常驻四星保底超过 9')
+  }
+  const fiveRate = standard.records.length / standard.totalPulls
+  const characterShare = characterCount / standard.records.length
+  assert(fiveRate > 0.012 && fiveRate < 0.022, `常驻五星综合概率异常 ${fiveRate}`)
+  assert(characterShare > 0.42 && characterShare < 0.58, `常驻五星角色比例异常 ${characterShare}`)
+  assert(owned.totalPulls === 0, '大量常驻祈愿后角色池抽数仍应为 0')
+}
+
+testStandardBanner()
 testBuiltinTitles()
 testWeaponRoster()
 testDeletedFourReturns()

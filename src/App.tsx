@@ -4,20 +4,24 @@ import { UpPortrait } from './components/UpPortrait.tsx'
 import { DetailModal } from './components/DetailModal.tsx'
 import { HistoryModal } from './components/HistoryModal.tsx'
 import { RosterModal } from './components/RosterModal.tsx'
+import { StandardCast } from './components/StandardCast.tsx'
+import { StandardDetailModal } from './components/StandardDetailModal.tsx'
 import { WeaponDetailModal } from './components/WeaponDetailModal.tsx'
 import { FateIcon, StarIcon } from './components/icons.tsx'
 import { MeteorShow } from './components/MeteorShow.tsx'
 import { ResultOverlay } from './components/ResultOverlay.tsx'
 import { buildPool, fourStarRoster } from './data/banner.ts'
+import { STANDARD_EVENT_NAME, buildStandardPool } from './data/standard.ts'
 import { WEAPON_TYPES, buildWeaponPool } from './data/weapons.ts'
 import { describeNextFive, fiveKindLabel, fiveStarProbability, meteorTone, pullMany, createWishState } from './lib/gacha.ts'
 import { loadSave, saveSave } from './lib/storage.ts'
+import { createStandardState, describeStandardFive, pullStandardMany } from './lib/standardGacha.ts'
 import { FATE_MAX, createWeaponState, describeWeaponFive, pullWeaponMany, weaponFiveProbability } from './lib/weaponGacha.ts'
 import { playReveal, playWishSounds, stopWishSound } from './lib/wishSound.ts'
-import type { CharacterCatalog, PoolConfig, PullResult, RosterEdits, WeaponPoolConfig, WeaponWishState, WishState } from './lib/types.ts'
+import type { CharacterCatalog, PoolConfig, PullResult, RosterEdits, StandardWishState, WeaponPoolConfig, WeaponWishState, WishState } from './lib/types.ts'
 
 type ModalName = 'detail' | 'history' | 'roster' | null
-type BannerKind = 'character' | 'weapon'
+type BannerKind = 'character' | 'weapon' | 'standard'
 type Phase = 'idle' | 'meteor' | 'result'
 
 function formatRate(probability: number): string {
@@ -54,6 +58,7 @@ export default function App() {
   const [weaponState, setWeaponState] = useState<WeaponWishState>(loaded.current.weaponState)
   const [weaponPool, setWeaponPool] = useState<WeaponPoolConfig>(loaded.current.weaponPool)
   const [roster, setRoster] = useState<RosterEdits>(loaded.current.roster)
+  const [standardState, setStandardState] = useState<StandardWishState>(loaded.current.standardState)
   const [banner, setBanner] = useState<BannerKind>('character')
   const [modal, setModal] = useState<ModalName>(null)
   const [phase, setPhase] = useState<Phase>('idle')
@@ -68,6 +73,7 @@ export default function App() {
   const weaponStateRef = useRef(weaponState)
   const weaponPoolRef = useRef(weaponPool)
   const rosterRef = useRef(roster)
+  const standardStateRef = useRef(standardState)
   const bannerRef = useRef(banner)
   const phaseRef = useRef(phase)
   const modalRef = useRef(modal)
@@ -79,14 +85,15 @@ export default function App() {
   weaponStateRef.current = weaponState
   weaponPoolRef.current = weaponPool
   rosterRef.current = roster
+  standardStateRef.current = standardState
   bannerRef.current = banner
   phaseRef.current = phase
   modalRef.current = modal
   chartAskRef.current = chartAsk
 
   useEffect(() => {
-    saveSave({ state, pool, catalog, weaponState, weaponPool, roster })
-  }, [state, pool, catalog, weaponState, weaponPool, roster])
+    saveSave({ state, pool, catalog, weaponState, weaponPool, roster, standardState })
+  }, [state, pool, catalog, weaponState, weaponPool, roster, standardState])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -127,6 +134,16 @@ export default function App() {
       results = pulled.results
       setWeaponState(pulled.weaponState)
       setState(pulled.characterState)
+    } else if (bannerRef.current === 'standard') {
+      const pulled = pullStandardMany(
+        standardStateRef.current,
+        stateRef.current,
+        count,
+        buildStandardPool(rosterRef.current.removedCharacters, rosterRef.current.removedWeapons, extraFours),
+      )
+      results = pulled.results
+      setStandardState(pulled.standard)
+      setState(pulled.owned)
     } else {
       const pulled = pullMany(stateRef.current, count, buildPool(poolRef.current, extraFours, rosterRef.current))
       results = pulled.results
@@ -163,10 +180,27 @@ export default function App() {
 
   const busy = phase !== 'idle' || modal !== null
   const weaponMode = banner === 'weapon'
-  const activeState = weaponMode ? weaponState : state
-  const last = activeState.records[activeState.records.length - 1]
-  const fiveRate = weaponMode ? weaponFiveProbability(weaponState.fivePity + 1) : fiveStarProbability(state.fivePity + 1)
+  const standardMode = banner === 'standard'
+  const activePulls = standardMode ? standardState.totalPulls : weaponMode ? weaponState.totalPulls : state.totalPulls
+  const activeFivePity = standardMode ? standardState.fivePity : weaponMode ? weaponState.fivePity : state.fivePity
+  const activeFourPity = standardMode ? standardState.fourPity : weaponMode ? weaponState.fourPity : state.fourPity
+  const activeFourGuaranteed = weaponMode ? weaponState.fourGuaranteed : standardMode ? false : state.fourGuaranteed
+  const last = standardMode ? standardState.records[standardState.records.length - 1] : weaponMode ? weaponState.records[weaponState.records.length - 1] : state.records[state.records.length - 1]
+  const fiveRate = weaponMode ? weaponFiveProbability(weaponState.fivePity + 1) : fiveStarProbability(activeFivePity + 1)
   const pityCap = weaponMode ? 80 : 90
+  const resetEverything = () => {
+    setState(createWishState())
+    setWeaponState(createWeaponState())
+    setStandardState(createStandardState())
+  }
+  const anyProgress =
+    state.totalPulls > 0 ||
+    state.owned.length > 0 ||
+    state.masterless > 0 ||
+    state.ownedWeapons.length > 0 ||
+    weaponState.totalPulls > 0 ||
+    weaponState.fatePoints > 0 ||
+    standardState.totalPulls > 0
 
   return (
     <div className="sky">
@@ -181,11 +215,14 @@ export default function App() {
             祈愿
           </div>
           <div className="banner-switch">
-            <button type="button" className={!weaponMode ? 'on' : ''} disabled={busy} onClick={() => setBanner('character')}>
+            <button type="button" className={banner === 'character' ? 'on' : ''} disabled={busy} onClick={() => setBanner('character')}>
               角色祈愿
             </button>
             <button type="button" className={weaponMode ? 'on' : ''} disabled={busy} onClick={() => setBanner('weapon')}>
               武器祈愿
+            </button>
+            <button type="button" className={standardMode ? 'on' : ''} disabled={busy} onClick={() => setBanner('standard')}>
+              常驻祈愿
             </button>
           </div>
           <div className="wallet">
@@ -193,24 +230,28 @@ export default function App() {
               <FateIcon />
               纠缠之缘 ∞
             </span>
-            <span className="wallet-pill accent">累计 {activeState.totalPulls}</span>
+            <span className="wallet-pill accent">累计 {activePulls}</span>
           </div>
         </header>
 
         <main className="stage">
-          <section className={`banner ${weaponMode ? 'weapon' : ''}`} aria-label={weaponMode ? `${weaponPool.eventName}武器活动祈愿` : `${pool.eventName}角色活动祈愿`}>
+          <section
+            className={`banner ${weaponMode ? 'weapon' : ''} ${standardMode ? 'standard' : ''}`}
+            aria-label={standardMode ? `${STANDARD_EVENT_NAME}常驻祈愿` : weaponMode ? `${weaponPool.eventName}武器活动祈愿` : `${pool.eventName}角色活动祈愿`}
+          >
             <BannerArt />
             <div className="banner-copy">
-              <div className="event-pill">{weaponMode ? '武器活动祈愿' : '角色活动祈愿'}</div>
-              <h1>{weaponMode ? weaponPool.eventName : pool.eventName}</h1>
-              <p className="boost">获取概率提升！</p>
+              <div className="event-pill">{standardMode ? '常驻祈愿' : weaponMode ? '武器活动祈愿' : '角色活动祈愿'}</div>
+              <h1>{standardMode ? STANDARD_EVENT_NAME : weaponMode ? weaponPool.eventName : pool.eventName}</h1>
+              {standardMode ? <p className="boost">常驻祈愿</p> : <p className="boost">获取概率提升！</p>}
               <p className="guarantee-line">
                 <i />
                 每十次祈愿必出四星或以上物品。
               </p>
-              <p className="event-note">模拟祈愿 · 资源无限</p>
+              <p className="event-note">{standardMode ? '常驻祈愿为永久性祈愿活动。' : '模拟祈愿 · 资源无限'}</p>
             </div>
-            {!weaponMode && <UpPortrait name={pool.upFive.name} />}
+            {banner === 'character' && <UpPortrait name={pool.upFive.name} />}
+            {standardMode && <StandardCast />}
             {weaponMode ? (
               <div className="weapon-pair">
                 {weaponPool.upFives.map((name) => (
@@ -228,7 +269,7 @@ export default function App() {
                 ))}
               </div>
             ) : null}
-            {!weaponMode && <div className="hero-card">
+            {banner === 'character' && <div className="hero-card">
               <div className="char-plate">
                 <div className="char-name">
                   {pool.upFive.name}
@@ -243,7 +284,7 @@ export default function App() {
                 </div>
               </div>
             </div>}
-            {weaponMode ? (
+            {standardMode ? null : weaponMode ? (
               <aside className="weapon-fours">
                 {weaponPool.upFours.map((name) => (
                   <div className="four-card" key={name}>
@@ -278,20 +319,21 @@ export default function App() {
         <footer className="dock">
           <div className="status">
             <div className="status-total">
-              累计 <b key={activeState.totalPulls}>{activeState.totalPulls}</b> 抽
+              累计 <b key={activePulls}>{activePulls}</b> 抽
             </div>
             <div className="meter" aria-hidden="true">
-              <span className={activeState.fivePity >= (weaponMode ? 62 : 73) ? 'hot' : ''} style={{ width: `${(activeState.fivePity / pityCap) * 100}%` }} />
+              <span className={activeFivePity >= (weaponMode ? 62 : 73) ? 'hot' : ''} style={{ width: `${(activeFivePity / pityCap) * 100}%` }} />
             </div>
             <p className="status-line">
-              五星 {activeState.fivePity}/{pityCap} · 概率 {formatRate(fiveRate)} · {weaponMode ? describeWeaponFive(weaponState, weaponPool.charted) : describeNextFive(state)}
+              五星 {activeFivePity}/{pityCap} · 概率 {formatRate(fiveRate)} · {standardMode ? describeStandardFive() : weaponMode ? describeWeaponFive(weaponState, weaponPool.charted) : describeNextFive(state)}
               <br />
-              四星 {activeState.fourPity}/10 · {activeState.fourGuaranteed ? '下一件四星必为 UP' : weaponMode ? '四星 75/25' : '四星 50/50'}
+              四星 {activeFourPity}/10 · {activeFourGuaranteed ? '下一件四星必为 UP' : standardMode ? '角色/武器各半' : weaponMode ? '四星 75/25' : '四星 50/50'}
             </p>
             {last && (
-              <p className={`last-five ${last.fiveKind === 'radiance' ? 'is-radiance' : ''}`}>
+              <p className={`last-five ${'fiveKind' in last && last.fiveKind === 'radiance' ? 'is-radiance' : ''}`}>
                 上次五星 {last.pity} 抽 · {last.name}
-                {last.constellation !== undefined ? ` · ${last.constellation}命` : ''} · {fiveKindLabel(last.fiveKind)}
+                {last.constellation !== undefined ? ` · ${last.constellation}命` : ''}
+                {'fiveKind' in last ? ` · ${fiveKindLabel(last.fiveKind)}` : ''}
                 {last.masterless ? ' · 无主的命星' : ''}
               </p>
             )}
@@ -324,7 +366,7 @@ export default function App() {
         </footer>
       </div>
 
-      {modal === 'detail' && !weaponMode && (
+      {modal === 'detail' && banner === 'character' && (
         <DetailModal
           pool={pool}
           catalog={catalog}
@@ -350,37 +392,47 @@ export default function App() {
           onEdits={setRoster}
         />
       )}
+      {modal === 'detail' && standardMode && (
+        <StandardDetailModal
+          pool={buildStandardPool(roster.removedCharacters, roster.removedWeapons, catalog.fours.map((item) => item.name))}
+          onClose={() => setModal(null)}
+        />
+      )}
       {modal === 'roster' && (
         <RosterModal
           state={state}
           catalog={catalog}
           onClose={() => setModal(null)}
-          onClearCharacters={() => setState((current) => ({ ...createWishState(), ownedWeapons: current.ownedWeapons }))}
-          onClearWeapons={() => {
-            setWeaponState(createWeaponState())
-            setState((current) => ({ ...current, ownedWeapons: [] }))
-          }}
+          canClear={anyProgress}
+          onClear={resetEverything}
         />
       )}
-      {modal === 'history' && !weaponMode && (
+      {modal === 'history' && banner === 'character' && (
         <HistoryModal
           state={state}
-          canReset={state.totalPulls > 0 || state.owned.length > 0 || state.masterless > 0}
+          canReset={anyProgress}
           onClose={() => setModal(null)}
-          onReset={() => setState((current) => ({ ...createWishState(), ownedWeapons: current.ownedWeapons }))}
+          onReset={resetEverything}
         />
       )}
       {modal === 'history' && weaponMode && (
         <HistoryModal
           mode="weapon"
           fatePoints={weaponState.fatePoints}
-          canReset={weaponState.totalPulls > 0 || weaponState.fatePoints > 0 || state.ownedWeapons.length > 0}
+          canReset={anyProgress}
           state={{ ...createWishState(), totalPulls: weaponState.totalPulls, fivePity: weaponState.fivePity, records: weaponState.records }}
           onClose={() => setModal(null)}
-          onReset={() => {
-            setWeaponState(createWeaponState())
-            setState((current) => ({ ...current, ownedWeapons: [] }))
-          }}
+          onReset={resetEverything}
+        />
+      )}
+      {modal === 'history' && standardMode && (
+        <HistoryModal
+          mode="standard"
+          state={state}
+          standardState={standardState}
+          canReset={anyProgress}
+          onClose={() => setModal(null)}
+          onReset={resetEverything}
         />
       )}
       {chartAsk && (
@@ -405,7 +457,7 @@ export default function App() {
       {session && phase === 'result' && (
         <ResultOverlay
           results={session.results}
-          totalPulls={activeState.totalPulls}
+          totalPulls={activePulls}
           onClose={() => setPhase('idle')}
           onAgain={() => startWish(session.results.length === 10 ? 10 : 1)}
         />

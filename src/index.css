@@ -652,6 +652,76 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .history-row.kind-lost { box-shadow: inset 3px 0 0 #9aa8b8; }
 .history-row.kind-up, .history-row.kind-guaranteed, .history-row.kind-charted { box-shadow: inset 3px 0 0 #e2b84a; }
 
+.history-row.plain { grid-template-columns: 92px 1fr auto; }
+
+.standard-cast {
+  position: absolute;
+  z-index: 2;
+  right: 24px;
+  bottom: 18px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.standard-hero, .standard-weapon-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 112px;
+  color: #f7fbff;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.standard-photo {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 42%, #ffe9b0 0%, #e2b44a 48%, #8d6420 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 244, 214, 0.55);
+}
+
+.standard-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.standard-photo .standard-element {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.standard-hero b, .standard-weapon-mark b {
+  margin-top: 6px;
+  font-family: KaiTi, STKaiti, serif;
+  font-size: 22px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.standard-hero small, .standard-weapon-mark small { color: #d7e8ff; font-size: 12px; }
+
+.standard-weapon-mark {
+  width: 128px;
+  margin-left: 8px;
+  padding: 14px 10px 10px;
+  border-radius: 18px;
+  background: rgba(7, 16, 36, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(255, 226, 150, 0.45);
+}
+
+.standard-names { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 8px 0 0; }
+
+.standard-names span { color: #3c2a16; font-size: 14px; }
+
 .weapon-pair {
   position: absolute;
   z-index: 2;
@@ -1016,6 +1086,15 @@ label.text-btn.is-disabled { opacity: 0.55; pointer-events: none; }
   .wish-btn { min-width: 0; flex: 1 1 0; height: 64px; padding: 0 8px; }
   .wish-title { font-size: 17px; letter-spacing: 0.04em; }
   .weapon-pair { top: 8px; right: 8px; gap: 8px; }
+  .standard-cast { right: 8px; bottom: 8px; gap: 8px; }
+  .standard-hero, .standard-weapon-mark { width: 76px; }
+  .standard-photo { width: 64px; height: 64px; border-radius: 12px; }
+  .standard-hero, .standard-weapon-mark { width: 84px; }
+  .standard-hero b, .standard-weapon-mark b { font-size: 16px; }
+  .standard-hero small, .standard-weapon-mark small { font-size: 10px; }
+  .standard-weapon-mark { width: 96px; padding: 8px 6px; }
+  .standard-weapon-mark b { white-space: nowrap; }
+  .history-row.plain { grid-template-columns: 78px 1fr auto; }
   .weapon-card { width: 112px; min-height: 132px; padding: 10px; }
   .weapon-card b { font-size: 20px; }
   .weapon-fours { left: 8px; right: 8px; bottom: 8px; flex-wrap: wrap; }

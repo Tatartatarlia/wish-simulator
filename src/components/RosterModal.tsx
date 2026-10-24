@@ -142,14 +142,14 @@ export function RosterModal({
   state,
   catalog,
   onClose,
-  onClearCharacters,
-  onClearWeapons,
+  onClear,
+  canClear = true,
 }: {
   state: WishState
   catalog: CharacterCatalog
   onClose: () => void
-  onClearCharacters: () => void
-  onClearWeapons: () => void
+  onClear: () => void
+  canClear?: boolean
 }) {
   const [tab, setTab] = useState<'character' | 'weapon'>('character')
   const [confirming, setConfirming] = useState(false)
@@ -184,8 +184,8 @@ export function RosterModal({
             武器
           </button>
         </div>
-        <button type="button" className="danger ghost" onClick={() => setConfirming(true)}>
-          {tab === 'character' ? '清空角色' : '清空武器'}
+        <button type="button" className="danger ghost" onClick={() => setConfirming(true)} disabled={!canClear}>
+          清空记录
         </button>
       </div>
       {tab === 'character' ? (
@@ -253,11 +253,9 @@ export function RosterModal({
         createPortal(
           <div className="chart-ask" role="dialog" aria-modal="true" aria-label="确认清空仓库" onClick={() => setConfirming(false)}>
             <div className="chart-ask-card" onClick={(event) => event.stopPropagation()}>
-            <h2>{tab === 'character' ? '清空角色' : '清空武器'}</h2>
+            <h2>清空全部记录</h2>
             <p>
-              {tab === 'character'
-                ? '确定清空仓库里的角色吗？角色祈愿的累计抽数、保底、历史记录和无主的命星会一起清掉。反过来，清空角色祈愿历史时，这里的角色也会一起清掉。武器栏和武器祈愿不受影响。'
-                : '确定清空仓库里的武器吗？武器祈愿的累计抽数、保底、历史记录和命定值会一起清掉，定轨选择会保留。反过来，清空武器祈愿历史时，这里的武器也会一起清掉。角色栏和角色祈愿不受影响。'}
+              确定从零开始吗？角色祈愿、武器祈愿和常驻祈愿的累计抽数、保底和历史都会重置，命定值和无主的命星归零，仓库里的角色和武器也会全部清掉。卡池配置和定轨选择会保留。
             </p>
             <div className="chart-ask-actions">
               <button type="button" className="text-btn" onClick={() => setConfirming(false)}>
@@ -267,8 +265,7 @@ export function RosterModal({
                 type="button"
                 className="text-btn solid"
                 onClick={() => {
-                  if (tab === 'character') onClearCharacters()
-                  else onClearWeapons()
+                  onClear()
                   setConfirming(false)
                 }}
               >

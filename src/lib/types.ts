@@ -120,6 +120,44 @@ export type ResolvedWeaponPool = {
   charted: string | null
 }
 
+export type StandardRecord = {
+  id: number
+  name: string
+  /** 距上一发五星（或从第一抽开始）的抽数，含本抽 */
+  pity: number
+  totalPulls: number
+  itemType: 'character' | 'weapon'
+  constellation?: number
+  masterless?: boolean
+}
+
+export type StarterRecord = {
+  id: number
+  name: string
+  /** 距上一发御三家（或从第一抽开始）的抽数，含本抽 */
+  pity: number
+  totalPulls: number
+}
+
+export type StandardWishState = {
+  totalPulls: number
+  fivePity: number
+  fourPity: number
+  /** 距上一发御三家已抽次数，不含即将进行的这一抽 */
+  starterPity: number
+  records: StandardRecord[]
+  starterRecords: StarterRecord[]
+  nextRecordId: number
+}
+
+export type StandardPool = {
+  fiveCharacters: readonly string[]
+  fiveWeapons: readonly string[]
+  fourCharacters: readonly string[]
+  fourWeapons: readonly string[]
+  threeWeapons: readonly string[]
+}
+
 export type WeaponWishState = {
   totalPulls: number
   fivePity: number

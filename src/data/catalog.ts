@@ -116,6 +116,9 @@ export const DEFAULT_FOUR_PROFILES: readonly FourProfile[] = [
   { name: '叶洛亚', title: '魇夜燃心', element: '岩' },
   { name: '布伦妮', title: '稚梦归心', element: '风' },
   { name: '阿罗夏', title: '疾掠弋缇', element: '雷' },
+  { name: '安柏', title: '飞行冠军', element: '火' },
+  { name: '凯亚', title: '寒风剑士', element: '冰' },
+  { name: '丽莎', title: '蔷薇魔女', element: '雷' },
 ]
 
 export const ELEMENTS = ['冰', '水', '火', '雷', '风', '岩', '草'] as const

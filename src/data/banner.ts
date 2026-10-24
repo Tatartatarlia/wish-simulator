@@ -38,7 +38,11 @@ export const STANDARD_FIVE_STARS: readonly string[] = [
   '琴',
 ]
 
+/** 御三家只进常驻池，不进角色活动祈愿和武器祈愿的四星角色名单。 */
+export const STARTER_NAMES: readonly string[] = ['安柏', '凯亚', '丽莎']
+
 /** 含本期四星 UP。解析卡池时，当前 UP 会从歪池里拿掉。 */
+
 export const FOUR_STAR_CHARACTERS: readonly string[] = [
   '塔利雅',
   '米卡',
@@ -140,7 +144,7 @@ export function fourStarRoster(extraNames: readonly string[] = []): string[] {
   const names = [...FOUR_STAR_CHARACTERS]
   for (const name of extraNames) {
     const trimmed = name.trim()
-    if (trimmed && !names.includes(trimmed)) names.push(trimmed)
+    if (trimmed && !(STARTER_NAMES as readonly string[]).includes(trimmed) && !names.includes(trimmed)) names.push(trimmed)
   }
   return names
 }

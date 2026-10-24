@@ -2,6 +2,7 @@ import { mergeCatalog } from '../data/catalog.ts'
 import { defaultPool } from '../data/banner.ts'
 import { defaultWeaponPool, emptyRosterEdits, weaponRarityOf } from '../data/weapons.ts'
 import { createWishState } from './gacha.ts'
+import { createStandardState } from './standardGacha.ts'
 import { FATE_MAX, createWeaponState } from './weaponGacha.ts'
 import type {
   CharacterCatalog,
@@ -14,6 +15,9 @@ import type {
   OwnedWeapon,
   PoolConfig,
   RosterEdits,
+  StandardRecord,
+  StandardWishState,
+  StarterRecord,
   WeaponEntry,
   WeaponPoolConfig,
   WeaponWishState,
@@ -204,6 +208,59 @@ export function sanitizeWeaponPool(value: unknown): WeaponPoolConfig {
   }
 }
 
+function sanitizeStandardRecord(value: unknown): StandardRecord | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Partial<StandardRecord>
+  const name = text(raw.name).trim()
+  if (!name || (raw.itemType !== 'character' && raw.itemType !== 'weapon')) return null
+  const record: StandardRecord = {
+    id: nonNegativeInt(raw.id),
+    name,
+    pity: nonNegativeInt(raw.pity),
+    totalPulls: nonNegativeInt(raw.totalPulls),
+    itemType: raw.itemType,
+  }
+  if (typeof raw.constellation === 'number' && Number.isFinite(raw.constellation)) {
+    record.constellation = Math.min(6, nonNegativeInt(raw.constellation))
+  }
+  if (raw.masterless === true) record.masterless = true
+  return record
+}
+
+function sanitizeStarterRecord(value: unknown): StarterRecord | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Partial<StarterRecord>
+  const name = text(raw.name).trim()
+  if (!name) return null
+  return {
+    id: nonNegativeInt(raw.id),
+    name,
+    pity: nonNegativeInt(raw.pity),
+    totalPulls: nonNegativeInt(raw.totalPulls),
+  }
+}
+
+export function sanitizeStandardState(value: unknown): StandardWishState {
+  if (!value || typeof value !== 'object') return createStandardState()
+  const raw = value as Partial<StandardWishState>
+  const records = Array.isArray(raw.records)
+    ? raw.records.map(sanitizeStandardRecord).filter((record): record is StandardRecord => record !== null)
+    : []
+  const starterRecords = Array.isArray(raw.starterRecords)
+    ? raw.starterRecords.map(sanitizeStarterRecord).filter((record): record is StarterRecord => record !== null)
+    : []
+  const maxId = [...records, ...starterRecords].reduce((max, record) => Math.max(max, record.id), 0)
+  return {
+    totalPulls: nonNegativeInt(raw.totalPulls),
+    fivePity: Math.min(89, nonNegativeInt(raw.fivePity)),
+    fourPity: Math.min(9, nonNegativeInt(raw.fourPity)),
+    starterPity: nonNegativeInt(raw.starterPity),
+    records,
+    starterRecords,
+    nextRecordId: Math.max(nonNegativeInt(raw.nextRecordId, 1), maxId + 1),
+  }
+}
+
 export function sanitizeWeaponState(value: unknown): WeaponWishState {
   if (!value || typeof value !== 'object') return createWeaponState()
   const raw = value as Partial<WeaponWishState>
@@ -251,6 +308,7 @@ export type SaveData = {
   weaponState: WeaponWishState
   weaponPool: WeaponPoolConfig
   roster: RosterEdits
+  standardState: StandardWishState
 }
 
 export function loadSave(): SaveData {
@@ -261,6 +319,7 @@ export function loadSave(): SaveData {
     weaponState: createWeaponState(),
     weaponPool: defaultWeaponPool,
     roster: emptyRosterEdits(),
+    standardState: createStandardState(),
   }
   try {
     const raw = localStorage.getItem(KEY)
@@ -273,6 +332,7 @@ export function loadSave(): SaveData {
       weaponState: sanitizeWeaponState(data.weaponState),
       weaponPool: sanitizeWeaponPool(data.weaponPool),
       roster: sanitizeRoster(data.roster),
+      standardState: sanitizeStandardState(data.standardState),
     }
   } catch {
     return fresh
