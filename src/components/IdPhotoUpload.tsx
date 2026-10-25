@@ -30,7 +30,9 @@ export function IdPhotoUpload({ name, rarity }: { name: string; rarity: 4 | 5 | 
       })
     }
     load()
-    const unsubscribe = subscribeCustomIdPhotos(load)
+    const unsubscribe = subscribeCustomIdPhotos((changed) => {
+      if (changed === trimmed) load()
+    })
     return () => {
       cancelled = true
       unsubscribe()

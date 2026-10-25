@@ -3,13 +3,13 @@ const storeName = 'images'
 const maxBytes = 20 * 1024 * 1024
 const maxEdge = 512
 
-const listeners = new Set<() => void>()
+const listeners = new Set<(name: string) => void>()
 
-function notify(): void {
-  for (const listener of listeners) listener()
+function notify(name: string): void {
+  for (const listener of listeners) listener(name)
 }
 
-export function subscribeCustomIdPhotos(listener: () => void): () => void {
+export function subscribeCustomIdPhotos(listener: (name: string) => void): () => void {
   listeners.add(listener)
   return () => listeners.delete(listener)
 }
@@ -79,7 +79,7 @@ export async function saveCustomIdPhoto(name: string, file: File): Promise<void>
   const database = await openDatabase()
   const store = database.transaction(storeName, 'readwrite').objectStore(storeName)
   await requestResult(store.put(blob, key))
-  notify()
+  notify(key)
 }
 
 export async function deleteCustomIdPhoto(name: string): Promise<void> {
@@ -88,5 +88,5 @@ export async function deleteCustomIdPhoto(name: string): Promise<void> {
   const database = await openDatabase()
   const store = database.transaction(storeName, 'readwrite').objectStore(storeName)
   await requestResult(store.delete(key))
-  notify()
+  notify(key)
 }
