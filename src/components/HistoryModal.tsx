@@ -11,6 +11,25 @@ function average(records: { pity: number }[]): string {
   return value.toFixed(1)
 }
 
+/** 从第 1 抽到最新一条记录的累计抽数，再除以记录条数。 */
+function spanAverage(records: { totalPulls: number }[]): string {
+  if (records.length === 0) return '—'
+  const latest = records.reduce((max, record) => Math.max(max, record.totalPulls), 0)
+  return (latest / records.length).toFixed(1)
+}
+
+/** 每条记录距离上一条同类记录的抽数。第一条从第 1 抽算起，中间的歪也算在内。 */
+function spansSincePrevious(records: { id: number; totalPulls: number }[]): Map<number, number> {
+  const sorted = [...records].sort((left, right) => left.totalPulls - right.totalPulls || left.id - right.id)
+  const spans = new Map<number, number>()
+  let previous = 0
+  for (const record of sorted) {
+    spans.set(record.id, record.totalPulls - previous)
+    previous = record.totalPulls
+  }
+  return spans
+}
+
 function StandardHistory({
   standard,
   onClose,
@@ -48,7 +67,7 @@ function StandardHistory({
           <span>御三家</span>
         </div>
         <div>
-          <b>{average(standard.starterRecords)}</b>
+          <b>{spanAverage(standard.starterRecords)}</b>
           <span>御三家平均间隔</span>
         </div>
         <div>
@@ -57,7 +76,7 @@ function StandardHistory({
         </div>
       </div>
       <p className="fine">
-        常驻池没有「歪」。出金间隔从上一发五星之后重新计算，第一发则从第 1 抽算起。御三家间隔按安柏、凯亚、丽莎单独计算，和五星保底互不影响。清空记录会把角色祈愿、武器祈愿、常驻祈愿和仓库全部重置，命定值和无主的命星归零。卡池配置和定轨选择会保留。
+        常驻池没有「歪」。出金间隔从上一发五星之后重新计算，第一发则从第 1 抽算起。御三家平均间隔是最新一次御三家的累计抽数除以御三家次数，和五星保底互不影响。清空记录会把角色祈愿、武器祈愿、常驻祈愿和仓库全部重置，命定值和无主的命星归零。卡池配置和定轨选择会保留。
       </p>
       <div className="history-tools">
         <button type="button" className="danger ghost" onClick={() => setConfirming(true)} disabled={canReset === false}>
@@ -155,8 +174,10 @@ function BannerHistory({
   const ups = state.records.filter((record) => record.fiveKind !== 'lost')
   const lost = state.records.filter((record) => record.fiveKind === 'lost')
   const radiance = state.records.filter((record) => record.fiveKind === (weapon ? 'charted' : 'radiance'))
-  const shown = (onlyUp ? ups : state.records).slice(-200).reverse()
-  const hidden = (onlyUp ? ups.length : state.records.length) - shown.length
+  const featured = weapon ? radiance : ups
+  const featuredSpans = spansSincePrevious(featured)
+  const shown = (onlyUp ? featured : state.records).slice(-200).reverse()
+  const hidden = (onlyUp ? featured.length : state.records.length) - shown.length
 
   return (
     <Modal title={weapon ? '武器祈愿历史' : '角色祈愿历史'} onClose={onClose}>
@@ -170,8 +191,8 @@ function BannerHistory({
           <span>五星</span>
         </div>
         <div>
-          <b>{ups.length}</b>
-          <span>UP 五星</span>
+          <b>{featured.length}</b>
+          <span>{weapon ? '定轨UP五星' : 'UP 五星'}</span>
         </div>
         <div>
           <b>{lost.length}</b>
@@ -186,8 +207,8 @@ function BannerHistory({
           <span>五星平均间隔</span>
         </div>
         <div>
-          <b>{average(ups)}</b>
-          <span>UP 平均间隔</span>
+          <b>{spanAverage(weapon ? radiance : ups)}</b>
+          <span>{weapon ? '定轨命中平均间隔' : 'UP 平均间隔'}</span>
         </div>
         <div>
           <b>{weapon ? `${fatePoints}/${FATE_MAX}` : state.masterless}</b>
@@ -199,10 +220,10 @@ function BannerHistory({
         </div>
       </div>
       <p className="fine">
-        间隔从上一发五星之后重新计算，第一发则从第 1 抽算起。
+        全部五星里，每一发从上一发五星之后重新计算，第一发则从第 1 抽算起。
         {weapon
-          ? '定轨之后，抽到的五星只要不是定轨武器，就记为「歪」。清空记录会把角色祈愿、武器祈愿、常驻祈愿和仓库全部重置，命定值和无主的命星归零。卡池配置和定轨选择会保留。'
-          : '五星会记下这一发之后的命之座，6 命封顶；已经 6 命再抽到时，会额外标出一枚无主的命星。清空记录会把角色祈愿、武器祈愿、常驻祈愿和仓库全部重置，命定值和无主的命星归零。卡池配置和定轨选择会保留。'}
+          ? '定轨UP五星只记定轨命中，抽数从上一发定轨命中算到这一发，中间的歪也算在内；第一发从第 1 抽算起。定轨命中平均间隔是这些抽数的平均数。清空记录会把角色祈愿、武器祈愿、常驻祈愿和仓库全部重置，命定值和无主的命星归零。卡池配置和定轨选择会保留。'
+          : '五星会记下这一发之后的命之座，6 命封顶；已经 6 命再抽到时，会额外标出一枚无主的命星。UP 五星从上一发 UP 算到这一发，中间的歪、小保底、大保底和捕获明光都算在内；第一发从第 1 抽算起，所以第 160 抽的大保底记为 160 抽。UP 平均间隔是这些抽数的平均数。清空记录会把角色祈愿、武器祈愿、常驻祈愿和仓库全部重置，命定值和无主的命星归零。卡池配置和定轨选择会保留。'}
       </p>
       <div className="history-tools">
         <div className="seg">
@@ -210,7 +231,7 @@ function BannerHistory({
             全部五星
           </button>
           <button type="button" className={onlyUp ? 'on' : ''} onClick={() => setOnlyUp(true)}>
-            UP 五星
+            {weapon ? '定轨UP五星' : 'UP 五星'}
           </button>
         </div>
         <button
@@ -223,13 +244,15 @@ function BannerHistory({
         </button>
       </div>
       {shown.length === 0 ? (
-        <p className="empty">还没有五星。出金后，这里会记下是多少抽出的。</p>
+        <p className="empty">
+          {onlyUp ? (weapon ? '还没有定轨命中。' : '还没有 UP。') : '还没有五星。出金后，这里会记下是多少抽出的。'}
+        </p>
       ) : (
         <ol className="history-list">
           {shown.map((record) => (
             <li key={record.id} className={`history-row kind-${record.fiveKind}`}>
               <b>
-                {record.pity}
+                {onlyUp ? (featuredSpans.get(record.id) ?? record.pity) : record.pity}
                 <small>抽</small>
               </b>
               <span className="who">
