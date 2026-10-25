@@ -48,12 +48,12 @@ type WeaponCard = {
   key: string
   weapon: OwnedWeapon
   rank: number
-  /** 三星精5合并后的把数。四星、五星以及不满精5的三星不使用。 */
+  /** 精5合并后的把数。五星，以及不满精5的卡，不使用。 */
   count: number | null
 }
 
-function weaponCards(weapon: OwnedWeapon, groupThrees: boolean): WeaponCard[] {
-  if (!groupThrees) {
+function weaponCards(weapon: OwnedWeapon, grouped: boolean): WeaponCard[] {
+  if (!grouped) {
     return refinementStacks(weapon.copies).map((rank, index) => ({
       key: `${weapon.name}-${index}`,
       weapon,
@@ -70,8 +70,8 @@ function weaponCards(weapon: OwnedWeapon, groupThrees: boolean): WeaponCard[] {
   return cards
 }
 
-function WeaponGrid({ weapons, groupThrees = false }: { weapons: OwnedWeapon[]; groupThrees?: boolean }) {
-  const cards = weapons.flatMap((weapon) => weaponCards(weapon, groupThrees))
+function WeaponGrid({ weapons, grouped = false }: { weapons: OwnedWeapon[]; grouped?: boolean }) {
+  const cards = weapons.flatMap((weapon) => weaponCards(weapon, grouped))
   if (cards.length === 0) return <p className="empty">还没有抽到。</p>
   return (
     <div className="roster-grid">
@@ -98,7 +98,7 @@ function WeaponGrid({ weapons, groupThrees = false }: { weapons: OwnedWeapon[]; 
 function stackCount(weapons: OwnedWeapon[], rarity: 3 | 4 | 5): number {
   return weapons
     .filter((weapon) => weapon.rarity === rarity)
-    .reduce((sum, weapon) => sum + weaponCards(weapon, rarity === 3).length, 0)
+    .reduce((sum, weapon) => sum + weaponCards(weapon, rarity !== 5).length, 0)
 }
 
 export function RosterModal({
@@ -196,7 +196,7 @@ export function RosterModal({
             </div>
           </div>
           <p className="fine">
-            第一把是精1，重复抽到同一把武器会提高精炼，精5封顶。四星和五星超过精5就另起一把，例如 7 把苍耀显示 1 把精5、1 把精2。三星的精5合并成一张卡，写明有多少把；不满精5的另外一张。
+            第一把是精1，重复抽到同一把武器会提高精炼，精5封顶。五星超过精5就另起一把，例如 7 把苍耀显示 1 把精5、1 把精2。四星和三星的精5合并成一张卡，写明有多少把；不满精5的另外一张。
           </p>
           <section className="roster-block">
             <h3>五星</h3>
@@ -204,11 +204,11 @@ export function RosterModal({
           </section>
           <section className="roster-block">
             <h3>四星</h3>
-            <WeaponGrid weapons={weaponFours} />
+            <WeaponGrid weapons={weaponFours} grouped />
           </section>
           <section className="roster-block">
             <h3>三星</h3>
-            <WeaponGrid weapons={weaponThrees} groupThrees />
+            <WeaponGrid weapons={weaponThrees} grouped />
           </section>
         </>
       )}
