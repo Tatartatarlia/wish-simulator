@@ -582,6 +582,44 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 
 .modal-body { overflow: auto; padding-right: 4px; }
 
+.luck-banner {
+  margin: 0 0 4px;
+  padding: 14px 16px 12px;
+  border-radius: 16px;
+  text-align: center;
+  background: rgba(255, 248, 230, 0.92);
+  border: 1px solid rgba(226, 184, 74, 0.45);
+}
+
+.luck-banner b {
+  display: block;
+  font-family: KaiTi, STKaiti, serif;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
+  color: #8a5a16;
+}
+
+.luck-banner span {
+  display: block;
+  margin-top: 4px;
+  color: #8b735b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.luck-banner.lucky {
+  background: linear-gradient(180deg, #fff8dc, #ffe7a3);
+}
+
+.luck-banner.unlucky {
+  background: rgba(232, 242, 252, 0.95);
+  border-color: rgba(126, 182, 255, 0.55);
+}
+
+.luck-banner.unlucky b { color: #24527a; }
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1191,6 +1229,7 @@ label.text-btn.is-disabled { opacity: 0.55; pointer-events: none; }
 }
 
 @media (max-width: 560px) {
+  .luck-banner b { font-size: 22px; letter-spacing: 0.04em; }
   .result-row:not(.result-row-single) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .result-card { min-height: 132px; padding: 10px 8px 8px; }
   .card-stars { font-size: 12px; }

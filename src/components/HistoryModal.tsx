@@ -1,6 +1,14 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { fiveKindLabel } from '../lib/gacha.ts'
+import {
+  CHARACTER_UP_EXPECTED,
+  CHARACTER_UP_FIRST_EXPECTED,
+  characterLuck,
+  WEAPON_CHARTED_EXPECTED,
+  weaponLuck,
+  type LuckReport,
+} from '../lib/luck.ts'
 import { FATE_MAX } from '../lib/weaponGacha.ts'
 import type { StandardWishState, WishState } from '../lib/types.ts'
 import { Modal } from './Modal.tsx'
@@ -28,6 +36,23 @@ function spansSincePrevious(records: { id: number; totalPulls: number }[]): Map<
     previous = record.totalPulls
   }
   return spans
+}
+
+function LuckBanner({ report, weapon }: { report: LuckReport | null; weapon: boolean }) {
+  const expected = (weapon ? WEAPON_CHARTED_EXPECTED : CHARACTER_UP_EXPECTED).toFixed(1)
+  const label = weapon ? '定轨命中平均间隔' : 'UP 平均间隔'
+  return (
+    <div className={`luck-banner ${report?.side ?? 'even'}`}>
+      <b>{report?.title ?? '还不能评级'}</b>
+      <span>
+        {report
+          ? `${label} ${report.average.toFixed(1)} 抽，期望 ${expected} 抽${report.rarity ? `，${report.rarity}` : ''}`
+          : weapon
+            ? `拿到定轨武器的期望是 ${expected} 抽。有定轨命中之后，会把平均间隔和这个期望比较。`
+            : `拿到 UP 角色的期望是 ${expected} 抽。出过 UP 之后，会把平均间隔和这个期望比较。`}
+      </span>
+    </div>
+  )
 }
 
 function StandardHistory({
@@ -176,11 +201,19 @@ function BannerHistory({
   const radiance = state.records.filter((record) => record.fiveKind === (weapon ? 'charted' : 'radiance'))
   const featured = weapon ? radiance : ups
   const featuredSpans = spansSincePrevious(featured)
+  const featuredTotal = featured.reduce((max, record) => Math.max(max, record.totalPulls), 0)
+  const luck = weapon ? weaponLuck(featuredTotal, featured.length) : characterLuck(featuredTotal, featured.length)
   const shown = (onlyUp ? featured : state.records).slice(-200).reverse()
   const hidden = (onlyUp ? featured.length : state.records.length) - shown.length
 
   return (
     <Modal title={weapon ? '武器祈愿历史' : '角色祈愿历史'} onClose={onClose}>
+      <LuckBanner report={luck} weapon={weapon} />
+      <p className="fine">
+        {weapon
+          ? `期望 ${WEAPON_CHARTED_EXPECTED.toFixed(1)} 抽按一直定轨计算：两把五星 UP 里定一把，没命中就累积命定，满了之后下一发五星必定是定轨。比期望少是欧，多是非；整段记录越罕见，称号越高。`
+          : `期望 ${CHARACTER_UP_EXPECTED.toFixed(1)} 抽是长期平均，已经算上 50/50、大保底和捕获明光。从零开始的第一次是 ${CHARACTER_UP_FIRST_EXPECTED.toFixed(1)} 抽。比期望少是欧，多是非；整段记录越罕见，称号越高。`}
+      </p>
       <div className="stat-grid">
         <div>
           <b>{state.totalPulls}</b>

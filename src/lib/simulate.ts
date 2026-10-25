@@ -14,6 +14,7 @@ import {
   selectableFourWeapons,
 } from '../data/weapons.ts'
 import { createWishState, grantWeapon, pullOnce, refinementStacks } from './gacha.ts'
+import { CHARACTER_UP_EXPECTED, CHARACTER_UP_FIRST_EXPECTED, WEAPON_CHARTED_EXPECTED, characterLuck, weaponLuck } from './luck.ts'
 import { createStandardState, pullStandardOnce } from './standardGacha.ts'
 import { createWeaponState, pullWeaponOnce } from './weaponGacha.ts'
 import type { FiveKind, WishState } from './types.ts'
@@ -334,6 +335,27 @@ function testStandardBanner(): void {
   assert(owned.totalPulls === 0, '大量常驻祈愿后角色池抽数仍应为 0')
 }
 
+function testLuck(): void {
+  assert(CHARACTER_UP_EXPECTED.toFixed(1) === '90.6', `UP 长期期望应为 90.6，实际 ${CHARACTER_UP_EXPECTED}`)
+  assert(CHARACTER_UP_FIRST_EXPECTED.toFixed(1) === '92.5', `第一次 UP 期望应为 92.5，实际 ${CHARACTER_UP_FIRST_EXPECTED}`)
+  assert(WEAPON_CHARTED_EXPECTED.toFixed(1) === '86.5', `定轨期望应为 86.5，实际 ${WEAPON_CHARTED_EXPECTED}`)
+  assert(characterLuck(0, 0) === null, '没有 UP 时不评级')
+  assert(weaponLuck(0, 0) === null, '没有定轨命中时不评级')
+  const first = characterLuck(1, 1)
+  assert(first?.title === '大欧皇' && first.side === 'lucky', `一抽出 UP 应为大欧皇，实际 ${first?.title}`)
+  const middle = characterLuck(80, 1)
+  assert(middle?.title === '欧非守恒', `80 抽第一次 UP 应是欧非守恒，实际 ${middle?.title}`)
+  const poor = characterLuck(180, 1)
+  assert(poor?.side === 'unlucky', `180 抽才出 UP 应是非酋，实际 ${poor?.title}`)
+  const charted = weaponLuck(1, 1)
+  assert(charted?.title === '大欧皇' && charted.side === 'lucky', `一抽出定轨应为大欧皇，实际 ${charted?.title}`)
+  const steady = characterLuck(Math.round(CHARACTER_UP_EXPECTED * 40), 40)
+  assert(steady?.title === '欧非守恒', `贴着长期期望应是欧非守恒，实际 ${steady?.title}`)
+  const streak = characterLuck(30 * 20, 20)
+  assert(streak?.side === 'lucky' && streak.title !== '欧非守恒', `连续早出 UP 应是欧皇，实际 ${streak?.title}`)
+}
+
+testLuck()
 testStandardBanner()
 testBuiltinTitles()
 testWeaponRoster()
