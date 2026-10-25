@@ -82,8 +82,9 @@ function IdPhotoFaceInner({ name, className = 'id-face' }: { name: string; class
     if (current.customReady) {
       setCustomUrl(current.customUrl)
       setCustomReady(true)
+    } else {
+      load()
     }
-    load()
     const unsubscribe = subscribeCustomIdPhotos((changed) => {
       if (changed === trimmed) load()
     })

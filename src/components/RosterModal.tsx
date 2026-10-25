@@ -107,12 +107,14 @@ export function RosterModal({
   onClose,
   onClear,
   canClear = true,
+  hidden = false,
 }: {
   state: WishState
   catalog: CharacterCatalog
   onClose: () => void
   onClear: () => void
   canClear?: boolean
+  hidden?: boolean
 }) {
   const [tab, setTab] = useState<'character' | 'weapon'>('character')
   const [confirming, setConfirming] = useState(false)
@@ -123,7 +125,7 @@ export function RosterModal({
   const weaponThrees = state.ownedWeapons.filter((item) => item.rarity === 3).sort(byName)
 
   return (
-    <Modal title="仓库" wide onClose={onClose}>
+    <Modal title="仓库" wide hidden={hidden} onClose={onClose}>
       <div className="roster-head">
         <div className="seg roster-tabs">
           <button
@@ -151,7 +153,7 @@ export function RosterModal({
           清空记录
         </button>
       </div>
-      {tab === 'character' ? (
+      <div hidden={tab !== 'character'}>
         <>
           <div className="stat-grid roster-summary">
             <div>
@@ -179,7 +181,8 @@ export function RosterModal({
             <CharacterGrid characters={fours} catalog={catalog} />
           </section>
         </>
-      ) : (
+      </div>
+      <div hidden={tab !== 'weapon'}>
         <>
           <div className="stat-grid roster-summary">
             <div>
@@ -211,7 +214,7 @@ export function RosterModal({
             <WeaponGrid weapons={weaponThrees} grouped />
           </section>
         </>
-      )}
+      </div>
       {confirming &&
         createPortal(
           <div className="chart-ask" role="dialog" aria-modal="true" aria-label="确认清空仓库" onClick={() => setConfirming(false)}>

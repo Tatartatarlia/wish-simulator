@@ -61,6 +61,7 @@ export default function App() {
   const [standardState, setStandardState] = useState<StandardWishState>(loaded.current.standardState)
   const [banner, setBanner] = useState<BannerKind>('character')
   const [modal, setModal] = useState<ModalName>(null)
+  const [rosterAlive, setRosterAlive] = useState(false)
   const [phase, setPhase] = useState<Phase>('idle')
   const [session, setSession] = useState<{ id: number; results: PullResult[] } | null>(null)
   const sessionRef = useRef(session)
@@ -341,7 +342,15 @@ export default function App() {
               <button type="button" className="text-btn" onClick={() => setModal('detail')} disabled={phase !== 'idle'}>
                 详情
               </button>
-              <button type="button" className="text-btn" onClick={() => setModal('roster')} disabled={phase !== 'idle'}>
+              <button
+                type="button"
+                className="text-btn"
+                onClick={() => {
+                  setRosterAlive(true)
+                  setModal('roster')
+                }}
+                disabled={phase !== 'idle'}
+              >
                 仓库
               </button>
               <button type="button" className="text-btn" onClick={() => setModal('history')} disabled={phase !== 'idle'}>
@@ -398,8 +407,9 @@ export default function App() {
           onClose={() => setModal(null)}
         />
       )}
-      {modal === 'roster' && (
+      {rosterAlive && (
         <RosterModal
+          hidden={modal !== 'roster'}
           state={state}
           catalog={catalog}
           onClose={() => setModal(null)}

@@ -3,20 +3,22 @@ import type { ReactNode } from 'react'
 export function Modal({
   title,
   wide = false,
+  hidden = false,
   onClose,
   children,
 }: {
   title: string
   wide?: boolean
+  hidden?: boolean
   onClose: () => void
   children: ReactNode
 }) {
   return (
-    <div className="modal-back" onClick={onClose}>
+    <div className="modal-back" hidden={hidden} inert={hidden} onClick={hidden ? undefined : onClose}>
       <div
         className={`modal ${wide ? 'modal-wide' : ''}`}
         role="dialog"
-        aria-modal="true"
+        aria-modal={hidden ? undefined : true}
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
       >

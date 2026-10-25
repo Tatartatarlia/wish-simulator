@@ -541,6 +541,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   z-index: 15;
 }
 
+.modal-back[hidden] { display: none !important; }
+
 .modal {
   position: relative;
   width: min(760px, 100%);
