@@ -1,8 +1,5 @@
 import { STANDARD_SHOWCASE } from '../data/standard.ts'
-
-function photoUrl(name: string): string {
-  return `${import.meta.env.BASE_URL}id-photos/${encodeURIComponent(name)}.webp`
-}
+import { IdPhotoFace } from './IdPhoto.tsx'
 
 export function StandardCast() {
   return (
@@ -10,7 +7,7 @@ export function StandardCast() {
       {STANDARD_SHOWCASE.map((character) => (
         <article key={character.name} className="standard-hero">
           <div className="standard-photo">
-            <img src={photoUrl(character.name)} alt="" />
+            <IdPhotoFace name={character.name} />
             <img className="standard-element" src={`${import.meta.env.BASE_URL}elements/${encodeURIComponent(character.element)}元素.png`} alt="" />
           </div>
           <b>{character.name}</b>

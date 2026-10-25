@@ -85,9 +85,9 @@ export function registerFourCharacter(
   const removedCharacters = withoutName(edits.removedCharacters, profile.name)
   if (existing) {
     const same = existing.title === profile.title && existing.element === profile.element
-    if (same && !restored) return { ok: false, error: `${profile.name} 已经对应 ${existing.title} · ${existing.element}` }
-    const fours = same ? catalog.fours : catalog.fours.map((item) => (item.name === profile.name ? profile : item))
-    return { ok: true, catalog: { ...catalog, fours }, edits: { ...edits, removedCharacters }, restored, updated: !same }
+    if (!same) return { ok: false, error: `${profile.name} 已经对应 ${existing.title} · ${existing.element}，称号不能修改` }
+    if (!restored) return { ok: false, error: `${profile.name} 已经对应 ${existing.title} · ${existing.element}` }
+    return { ok: true, catalog, edits: { ...edits, removedCharacters }, restored: true, updated: false }
   }
   return {
     ok: true,

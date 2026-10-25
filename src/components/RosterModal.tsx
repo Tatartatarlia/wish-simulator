@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ELEMENTS, characterElement } from '../data/catalog.ts'
 import { refinementStacks } from '../lib/gacha.ts'
 import type { CharacterCatalog, OwnedCharacter, OwnedWeapon, WishState } from '../lib/types.ts'
+import { IdPhotoFace } from './IdPhoto.tsx'
 import { Modal } from './Modal.tsx'
 
 function byConstellation(left: OwnedCharacter, right: OwnedCharacter): number {
@@ -12,44 +13,6 @@ function byConstellation(left: OwnedCharacter, right: OwnedCharacter): number {
 
 function byName(left: OwnedWeapon, right: OwnedWeapon): number {
   return left.name.localeCompare(right.name, 'zh')
-}
-
-const idPhotoExtensions = ['webp', 'png'] as const
-
-function idPhotoUrl(name: string, extension: (typeof idPhotoExtensions)[number]): string {
-  return `${import.meta.env.BASE_URL}id-photos/${encodeURIComponent(name)}.${extension}`
-}
-
-function CharacterIdPhoto({ name }: { name: string }) {
-  const [src, setSrc] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    let index = 0
-    const image = new Image()
-    const tryNext = () => {
-      const extension = idPhotoExtensions[index]
-      if (!extension) {
-        if (!cancelled) setSrc(null)
-        return
-      }
-      image.src = idPhotoUrl(name, extension)
-    }
-    image.onload = () => {
-      if (!cancelled) setSrc(image.src)
-    }
-    image.onerror = () => {
-      index += 1
-      tryNext()
-    }
-    tryNext()
-    return () => {
-      cancelled = true
-    }
-  }, [name])
-
-  if (!src) return null
-  return <img className="id-face" src={src} alt="" />
 }
 
 function CharacterGrid({ characters, catalog }: { characters: OwnedCharacter[]; catalog: CharacterCatalog }) {
@@ -65,7 +28,7 @@ function CharacterGrid({ characters, catalog }: { characters: OwnedCharacter[]; 
             aria-label={character.constellation > 0 ? `${character.name} ${character.constellation}命` : character.name}
           >
             <div className={`id-photo rarity-${character.rarity}`}>
-              <CharacterIdPhoto name={character.name} />
+              <IdPhotoFace name={character.name} />
               {(ELEMENTS as readonly string[]).includes(element) && (
                 <img className="id-element" src={`${import.meta.env.BASE_URL}elements/${encodeURIComponent(element)}元素.png`} alt="" />
               )}

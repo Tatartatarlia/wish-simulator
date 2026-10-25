@@ -1,6 +1,6 @@
 import { FOUR_STAR_CHARACTERS, STARTER_NAMES, buildPool, defaultPool, fourStarRoster } from '../data/banner.ts'
 import { buildStandardPool } from '../data/standard.ts'
-import { catalogExtras, emptyCatalog, mergeCatalog } from '../data/catalog.ts'
+import { emptyCatalog, mergeCatalog } from '../data/catalog.ts'
 import { addWeapon, deleteCharacter, deleteWeapon, registerFourCharacter } from '../data/roster.ts'
 import {
   LIMITED_FOUR_WEAPONS,
@@ -254,17 +254,9 @@ function testDeletedFourReturns(): void {
   const names = added.catalog.fours.map((item) => item.name)
   assert(buildPool(defaultPool, names, added.edits).offBannerFours.includes('夏沃蕾'), '加回后夏沃蕾应出现在非 UP 四星池')
   const duplicate = registerFourCharacter(added.edits, added.catalog, { name: '夏沃蕾', title: '别的称号', element: '水' })
-  assert(duplicate.ok && duplicate.updated, '已有称号的四星应能改称号')
-  if (duplicate.ok) {
-    const saved = duplicate.catalog.fours.find((item) => item.name === '夏沃蕾')
-    assert(saved?.title === '别的称号' && saved.element === '水', '修改后的称号和元素应写回记录')
-  }
+  assert(!duplicate.ok, '已有称号的四星不能改称号')
   const edited = registerFourCharacter(emptyRosterEdits(), catalog, { name: '米卡', title: '改过的称号', element: '冰' })
-  assert(edited.ok && edited.updated, '默认四星的称号也应能修改')
-  if (edited.ok) {
-    const mika = mergeCatalog(catalogExtras(edited.catalog)).fours.find((item) => item.name === '米卡')
-    assert(mika?.title === '改过的称号' && mika.element === '冰', '改过的默认四星称号应在重新打开后保留')
-  }
+  assert(!edited.ok, '默认四星的称号不能修改')
 
   const removedWeapon = deleteWeapon(emptyRosterEdits(), defaultWeaponPool, '匣里龙吟')
   assert(removedWeapon.ok, '应能删除非 UP 武器匣里龙吟')

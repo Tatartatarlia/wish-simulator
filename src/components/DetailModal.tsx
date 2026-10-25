@@ -11,6 +11,7 @@ import { ELEMENTS, addFiveProfile, findFive, findFour, fiveHint, fourHint } from
 import { deleteCharacter, deleteWeapon, registerFourCharacter, restoreCharacter } from '../data/roster.ts'
 import { weaponRarityOf } from '../data/weapons.ts'
 import type { CharacterCatalog, PoolConfig, RosterEdits, WeaponPoolConfig } from '../lib/types.ts'
+import { IdPhotoUpload } from './IdPhotoUpload.tsx'
 import { Modal } from './Modal.tsx'
 import { PortraitUpload } from './PortraitUpload.tsx'
 
@@ -125,8 +126,9 @@ export function DetailModal({
   const [draft, setDraft] = useState(pool)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
-  const [editingFour, setEditingFour] = useState<[boolean, boolean, boolean]>([false, false, false])
   const [star, setStar] = useState<4 | 5>(5)
+  const [idPhotoEditor, setIdPhotoEditor] = useState(false)
+  const [idPhotoName, setIdPhotoName] = useState('')
   const [adding, setAdding] = useState({ eventName: '', name: '', title: '', element: '冰' })
   const [addError, setAddError] = useState('')
   const [addNote, setAddNote] = useState('')
@@ -165,6 +167,14 @@ export function DetailModal({
     .filter((name) => !removedCharacters.has(name))
     .sort(byFirstCharacterPinyin)
   const fourNames = fourStarRoster(catalog.fours.map((item) => item.name)).sort(byFirstCharacterPinyin)
+  const idPhotoNames = [
+    ...new Set([...catalog.fives.map((item) => item.name), ...STANDARD_FIVE_STARS, ...catalog.fours.map((item) => item.name)]),
+  ].sort(byFirstCharacterPinyin)
+  const idPhotoRarity = findFive(catalog, idPhotoName) || (STANDARD_FIVE_STARS as readonly string[]).includes(idPhotoName.trim())
+    ? 5
+    : findFour(catalog, idPhotoName)
+      ? 4
+      : null
 
   const applyFiveName = (value: string) => {
     setSaved(false)
@@ -182,13 +192,6 @@ export function DetailModal({
 
   const updateFour = (index: 0 | 1 | 2, field: 'name' | 'title' | 'element', value: string) => {
     setSaved(false)
-    if (field === 'name') {
-      setEditingFour((current) => {
-        const next = [...current] as [boolean, boolean, boolean]
-        next[index] = false
-        return next
-      })
-    }
     setDraft((current) => {
       const upFours = [...current.upFours] as PoolConfig['upFours']
       if (field === 'name') {
@@ -213,31 +216,11 @@ export function DetailModal({
     let nextCatalog = catalog
     let nextEdits = edits
     const fours = []
-    for (const [index, item] of draft.upFours.entries()) {
+    for (const item of draft.upFours) {
       const existing = findFour(nextCatalog, item.name)
       if (existing) {
-        const title = editingFour[index] ? item.title.trim() : existing.title
-        const element = editingFour[index] ? item.element.trim() : existing.element
-        if (title !== existing.title || element !== existing.element) {
-          const registered = registerFourCharacter(nextEdits, nextCatalog, { name: existing.name, title, element })
-          if (!registered.ok) {
-            setError(registered.error)
-            setSaved(false)
-            return
-          }
-          nextCatalog = registered.catalog
-          nextEdits = registered.edits
-          const profile = findFour(nextCatalog, existing.name)
-          if (!profile) {
-            setError('四星 UP 要填写角色名、称号和元素。')
-            setSaved(false)
-            return
-          }
-          fours.push(profile)
-        } else {
-          fours.push(existing)
-          nextEdits = restoreCharacter(nextEdits, existing.name)
-        }
+        fours.push(existing)
+        nextEdits = restoreCharacter(nextEdits, existing.name)
         continue
       }
       const registered = registerFourCharacter(nextEdits, nextCatalog, item)
@@ -272,7 +255,6 @@ export function DetailModal({
       })) as PoolConfig['upFours'],
     }
     setDraft(next)
-    setEditingFour([false, false, false])
     setError('')
     setSaved(true)
     if (nextCatalog !== catalog) onCatalog(nextCatalog)
@@ -315,13 +297,9 @@ export function DetailModal({
       const title = saved?.title ?? adding.title.trim()
       const element = saved?.element ?? adding.element.trim()
       setAddNote(
-        added.updated && added.restored
-          ? `四星「${name}」已回到卡池，称号改为 ${title} · ${element}。`
-          : added.updated
-            ? `已把四星「${name}」的称号改为 ${title} · ${element}。`
-            : added.restored
-              ? `四星「${name}」已回到卡池，称号是 ${title} · ${element}。`
-              : `已登记四星「${name}」，对应 ${title} · ${element}。可以选为 UP，没被选中时仍留在四星角色池。`,
+        added.restored
+          ? `四星「${name}」已回到卡池，称号是 ${title} · ${element}。`
+          : `已登记四星「${name}」，对应 ${title} · ${element}。可以选为 UP，没被选中时仍留在四星角色池。`,
       )
     }
     setAddError('')
@@ -374,7 +352,7 @@ export function DetailModal({
 
       <section className="editor">
         <h3>修改本期 UP</h3>
-        <p className="fine">角色名是主键。五星和四星都可以从列表选择，也可以自己输入。还没有称号的四星，补上称号和元素后直接保存，不必先删除。称号写错时，点「修改称号」改正后再保存。保底、历史和仓库不会被清空。</p>
+        <p className="fine">角色名是主键。五星和四星都可以从列表选择，也可以自己输入。还没有称号的四星，补上称号和元素后直接保存，不必先删除。已经登记过的四星称号不能再改。保底、历史和仓库不会被清空。</p>
         <div className="editor-grid">
           <label>
             活动名称
@@ -396,8 +374,7 @@ export function DetailModal({
           <PortraitUpload name={draft.upFive.name} />
           {draft.upFours.map((item, index) => {
             const profile = findFour(catalog, item.name)
-            const editing = editingFour[index] === true
-            const locked = Boolean(profile) && !editing
+            const locked = Boolean(profile)
             const note = fourHint(catalog, item.name)
             return (
               <div className="four-edit" key={index}>
@@ -413,28 +390,7 @@ export function DetailModal({
                   元素
                   <input value={locked ? profile?.element ?? '' : item.element} disabled={locked} onChange={(event) => updateFour(index as 0 | 1 | 2, 'element', event.target.value)} />
                 </label>
-                {profile && !editing && (
-                  <button
-                    type="button"
-                    className="text-btn edit-title"
-                    onClick={() => {
-                      setSaved(false)
-                      setDraft((current) => {
-                        const upFours = [...current.upFours] as PoolConfig['upFours']
-                        upFours[index] = { name: profile.name, title: profile.title, element: profile.element }
-                        return { ...current, upFours }
-                      })
-                      setEditingFour((current) => {
-                        const next = [...current] as [boolean, boolean, boolean]
-                        next[index] = true
-                        return next
-                      })
-                    }}
-                  >
-                    修改称号
-                  </button>
-                )}
-                <p className={`field-hint hint-${note.tone}`}>{editing ? '改完后点保存卡池，称号和元素会更新。角色名不变。' : note.text}</p>
+                <p className={`field-hint hint-${note.tone}`}>{note.text}</p>
               </div>
             )
           })}
@@ -460,8 +416,27 @@ export function DetailModal({
       </section>
 
       <section className="editor">
+        <h3>角色证件照</h3>
+        <p className="fine">自带证件照按角色名放在 id-photos-src。上传的图片只替换显示，不能删掉自带的那张。</p>
+        <div className="editor-actions">
+          <button type="button" className="text-btn" onClick={() => setIdPhotoEditor(true)}>
+            编辑角色证件照
+          </button>
+        </div>
+        {idPhotoEditor && (
+          <div className="editor-grid add-grid">
+            <label>
+              角色
+              <LimitedFiveField listId="id-photo-names" value={idPhotoName} names={idPhotoNames} onChange={setIdPhotoName} />
+            </label>
+            <IdPhotoUpload name={idPhotoName} rarity={idPhotoRarity} />
+          </div>
+        )}
+      </section>
+
+      <section className="editor">
         <h3>添加角色</h3>
-        <p className="fine">新角色按名字登记一次。五星要填活动名称，四星不用。已有四星也可以在这里补称号；如果之前被删掉了，补上后会回到卡池。五星也可以在上面直接上传立绘。自带立绘仍按角色名放在 portraits-src，上传的图片不能把它删掉。</p>
+        <p className="fine">新角色按名字登记一次。五星要填活动名称，四星不用。已经有称号的四星不能在这里改称号；如果之前被删掉了，用原来的称号登记会回到卡池。五星也可以在上面直接上传立绘。自带立绘仍按角色名放在 portraits-src，上传的图片不能把它删掉。</p>
         <div className="seg add-star">
           <button type="button" className={star === 5 ? 'on' : ''} onClick={() => { setStar(5); setAddError(''); setAddNote('') }}>
             五星
