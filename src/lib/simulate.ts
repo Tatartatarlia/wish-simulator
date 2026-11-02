@@ -65,7 +65,7 @@ function testEarlyBranches(): void {
 
   const radiance = pullOnce(createWishState(), pool, scripted([0, 0]))
   assert(radiance.result.fiveKind === 'radiance', '极低随机数应触发捕获明光')
-  assert(radiance.result.name === '丝柯克', '捕获明光应给出 UP')
+  assert(radiance.result.name === '米提亚', '捕获明光应给出 UP')
   assert(radiance.state.radianceStreak === 0, '捕获明光后连歪计数应清零')
   assert(radiance.result.pity === 1, '第一抽五星间隔应为 1')
 
@@ -78,7 +78,7 @@ function testEarlyBranches(): void {
   assert(lost.state.fiveGuaranteed, '歪之后应进入大保底')
   const guaranteed = pullOnce(lost.state, pool, scripted([0, 0]))
   assert(guaranteed.result.fiveKind === 'guaranteed', '大保底应直接给 UP，且不消耗捕获明光')
-  assert(guaranteed.result.name === '丝柯克', '大保底角色应为 UP')
+  assert(guaranteed.result.name === '米提亚', '大保底角色应为 UP')
   assert(guaranteed.state.radianceStreak === 1, '大保底不应清掉连歪计数')
 
   let fourState = createWishState()
@@ -172,11 +172,11 @@ function testConstellationCap(): void {
   for (let copy = 0; copy < 8; copy += 1) {
     const step = pullOnce(state, pool, () => 0)
     state = step.state
-    assert(step.result.name === '丝柯克', '满命测试应一直抽到丝柯克')
-    assert(step.result.constellation === Math.min(copy, 6), `第 ${copy + 1} 个丝柯克的命座不对`)
-    assert(step.result.masterless === (copy === 7), `第 ${copy + 1} 个丝柯克的无主的命星标记不对`)
+    assert(step.result.name === '米提亚', '满命测试应一直抽到米提亚')
+    assert(step.result.constellation === Math.min(copy, 6), `第 ${copy + 1} 个米提亚的命座不对`)
+    assert(step.result.masterless === (copy === 7), `第 ${copy + 1} 个米提亚的无主的命星标记不对`)
   }
-  const owned = state.owned.find((item) => item.name === '丝柯克')
+  const owned = state.owned.find((item) => item.name === '米提亚')
   assert(owned?.constellation === 6, '仓库中的命座应停在 6')
   assert(state.masterless === 1, '超过 6 命后应有 1 枚无主的命星')
   assert(state.records[7]?.masterless === true, '历史里第 8 个五星应标出无主的命星')
@@ -185,24 +185,24 @@ function testConstellationCap(): void {
 function testWeaponBanner(): void {
   const plain = buildWeaponPool(defaultWeaponPool, emptyRosterEdits(), fourStarRoster())
   assert(plain.charted === null, '默认不应事先定轨')
-  assert(plain.upFives[0] === '苍耀' && plain.upFives[1] === '香韵奏者', '五星 UP 应为苍耀和香韵奏者')
+  assert(plain.upFives[0] === '秘星典谕' && plain.upFives[1] === '静水流涌之辉', '五星 UP 应为秘星典谕和静水流涌之辉')
   const uncharted = pullWeaponOnce(createWeaponState(), createWishState(), plain, () => 0)
-  assert(uncharted.result.name === '苍耀' && uncharted.result.fiveKind === 'up', '没有定轨时，自然 UP 仍记为 UP')
+  assert(uncharted.result.name === '秘星典谕' && uncharted.result.fiveKind === 'up', '没有定轨时，自然 UP 仍记为 UP')
   assert(uncharted.weaponState.fatePoints === 0, '没有定轨时不累积命定值')
 
-  const pool = buildWeaponPool({ ...defaultWeaponPool, charted: '香韵奏者' }, emptyRosterEdits(), fourStarRoster())
+  const pool = buildWeaponPool({ ...defaultWeaponPool, charted: '静水流涌之辉' }, emptyRosterEdits(), fourStarRoster())
   let weapons = createWeaponState()
   let characters = createWishState()
   const step = pullWeaponOnce(weapons, characters, pool, () => 0)
   weapons = step.weaponState
   characters = step.characterState
-  assert(step.result.name === '苍耀', '未满命定时，随机数 0 应抽到第一件 UP')
+  assert(step.result.name === '秘星典谕', '未满命定时，随机数 0 应抽到第一件 UP')
   assert(step.result.fiveKind === 'lost', '定轨后，不是定轨武器的五星应记为歪')
   assert(weapons.fatePoints === 1, '一把非定轨五星后命定值应为 1')
   assert(characters.totalPulls === 0 && characters.fivePity === 0, '武器池抽卡不应改角色池保底')
-  assert(characters.ownedWeapons.find((item) => item.name === '苍耀')?.copies === 1, '苍耀应记入仓库')
+  assert(characters.ownedWeapons.find((item) => item.name === '秘星典谕')?.copies === 1, '秘星典谕应记入仓库')
   const charted = pullWeaponOnce(weapons, characters, pool, () => 0)
-  assert(charted.result.name === '香韵奏者' && charted.result.fiveKind === 'charted', '命定值满后应定轨出香韵奏者')
+  assert(charted.result.name === '静水流涌之辉' && charted.result.fiveKind === 'charted', '命定值满后应定轨出静水流涌之辉')
   assert(charted.weaponState.fatePoints === 0, '抽到定轨武器后命定值归零')
 
   let bag = createWishState()
@@ -225,12 +225,12 @@ function testWeaponBanner(): void {
 function testWeaponRoster(): void {
   const edits = emptyRosterEdits()
   const pool = buildWeaponPool(defaultWeaponPool, edits, fourStarRoster())
-  assert(defaultWeaponPool.upFives.join(',') === '苍耀,香韵奏者', '默认五星 UP 仍是苍耀和香韵奏者')
-  assert(defaultWeaponPool.upFours.join(',') === '弥坚骨,祭礼大剑,西风长枪,流浪乐章,祭礼弓', '默认四星 UP 不变')
+  assert(defaultWeaponPool.upFives.join(',') === '秘星典谕,静水流涌之辉', '默认五星 UP 应为秘星典谕和静水流涌之辉')
+  assert(defaultWeaponPool.upFours.join(',') === '船坞长剑,勘探钻机,霜辰,雨裁,弓藏', '默认四星 UP 应为船坞长剑、勘探钻机、霜辰、雨裁、弓藏')
   assert(STANDARD_FIVE_WEAPONS.length === 10, '常驻五星武器应为 10 件')
-  assert(LIMITED_FIVE_WEAPONS.length === 64, '限定五星武器数量')
+  assert(LIMITED_FIVE_WEAPONS.length === 65, '限定五星武器数量')
   assert(LIMITED_FOUR_WEAPONS.length === 27, '限定四星武器数量')
-  assert(selectableFiveWeapons(edits).length === 74, '五星 UP 应能选到全部常驻和限定')
+  assert(selectableFiveWeapons(edits).length === 75, '五星 UP 应能选到全部常驻和限定')
   assert(selectableFourWeapons(edits).includes('暗巷闪光') && selectableFourWeapons(edits).includes('祭礼剑'), '四星 UP 应能选常驻和限定')
   assert(!pool.standardFives.includes('雾切之回光') && !pool.standardFives.includes('灾悔') && !pool.standardFives.includes('星锋剑'), '限定五星不应进入常驻歪池')
   assert(pool.standardFives.includes('风鹰剑'), '没被选为 UP 的常驻五星仍在歪池')
@@ -282,9 +282,9 @@ function testBuiltinTitles(): void {
   assert(tartaglia?.eventName === '暂别冬都' && tartaglia.title === '「公子」' && tartaglia.element === '水', '达达利亚应保留卡池名和称号引号')
   const escoffier = catalog.fives.find((item) => item.name === '爱可菲')
   assert(escoffier?.eventName === '莓色香颂' && escoffier.title === '明绚千韵' && escoffier.element === '冰', '爱可菲称号应为明绚千韵')
-  assert(catalog.fives.length === 60, '限定五星记录数量')
-  assert(defaultPool.upFive.name === '丝柯克', '默认五星 UP 仍是丝柯克')
-  assert(defaultPool.upFours.map((item) => item.name).join(',') === '塔利雅,坎蒂丝,米卡', '默认四星 UP 不变')
+  assert(catalog.fives.length === 61, '限定五星记录数量')
+  assert(defaultPool.upFive.name === '米提亚', '默认五星 UP 应为米提亚')
+  assert(defaultPool.upFours.map((item) => item.name).join(',') === '瓦列里,夏洛蒂,罗莎莉亚', '默认四星 UP 应为瓦列里、夏洛蒂、罗莎莉亚')
 }
 
 function testStandardBanner(): void {

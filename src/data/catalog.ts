@@ -65,6 +65,7 @@ export const DEFAULT_FIVE_PROFILES: readonly FiveProfile[] = [
   { name: '奥黛塔', eventName: '冰绡鹄影', title: '翾风回雪', element: '冰' },
   { name: '薇斯纳', eventName: '煦风欢舞时', title: '雪宴之锋', element: '风' },
   { name: '沃雅妮莎', eventName: '涌浪叙歌', title: '幽歌萦渊', element: '水' },
+  { name: '米提亚', eventName: '万序衍盈', title: '列律名虚', element: '雷' },
 ]
 
 export const DEFAULT_FOUR_PROFILES: readonly FourProfile[] = [
@@ -116,6 +117,7 @@ export const DEFAULT_FOUR_PROFILES: readonly FourProfile[] = [
   { name: '叶洛亚', title: '魇夜燃心', element: '岩' },
   { name: '布伦妮', title: '稚梦归心', element: '风' },
   { name: '阿罗夏', title: '疾掠弋缇', element: '雷' },
+  { name: '瓦列里', title: '霆骇军垒', element: '雷' },
   { name: '安柏', title: '飞行冠军', element: '火' },
   { name: '凯亚', title: '寒风剑士', element: '冰' },
   { name: '丽莎', title: '蔷薇魔女', element: '雷' },

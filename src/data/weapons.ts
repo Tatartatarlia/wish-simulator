@@ -71,6 +71,7 @@ export const LIMITED_FIVE_WEAPONS: readonly string[] = [
   '帷间夜曲',
   '尘光七谕',
   '漩流颂歌',
+  '秘星典谕',
   '终末嗟叹之诗',
   '飞雷之弦振',
   '冬极白星',
@@ -178,6 +179,7 @@ export const WEAPON_TYPES: Readonly<Record<string, string>> = {
   帷间夜曲: '法器',
   尘光七谕: '法器',
   漩流颂歌: '法器',
+  秘星典谕: '法器',
   天空之翼: '弓',
   阿莫斯之弓: '弓',
   终末嗟叹之诗: '弓',
@@ -239,8 +241,8 @@ export const WEAPON_TYPES: Readonly<Record<string, string>> = {
 
 export const defaultWeaponPool: WeaponPoolConfig = {
   eventName: '神铸赋形',
-  upFives: ['苍耀', '香韵奏者'],
-  upFours: ['弥坚骨', '祭礼大剑', '西风长枪', '流浪乐章', '祭礼弓'],
+  upFives: ['秘星典谕', '静水流涌之辉'],
+  upFours: ['船坞长剑', '勘探钻机', '霜辰', '雨裁', '弓藏'],
   charted: null,
 }
 
