@@ -8,9 +8,9 @@ import type { NamedItem, PoolConfig, ResolvedPool, RosterEdits } from '../lib/ty
  * 常驻角色、四星与三星武器仍以这里的清单为准。
  */
 
-const featuredFiveName = '米提亚'
+const featuredFiveName = '兹白'
 const featuredFive = DEFAULT_FIVE_PROFILES.find((item) => item.name === featuredFiveName) ?? DEFAULT_FIVE_PROFILES[0]
-const featuredFourNames = ['瓦列里', '夏洛蒂', '罗莎莉亚'] as const
+const featuredFourNames = ['叶洛亚', '爱诺', '凝光'] as const
 const featuredFours = featuredFourNames.map((name) => {
   const profile = DEFAULT_FOUR_PROFILES.find((item) => item.name === name)
   if (!profile) throw new Error(`默认四星 UP「${name}」不在角色记录里`)

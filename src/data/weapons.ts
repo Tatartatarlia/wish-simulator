@@ -241,8 +241,8 @@ export const WEAPON_TYPES: Readonly<Record<string, string>> = {
 
 export const defaultWeaponPool: WeaponPoolConfig = {
   eventName: '神铸赋形',
-  upFives: ['秘星典谕', '静水流涌之辉'],
-  upFours: ['船坞长剑', '勘探钻机', '霜辰', '雨裁', '弓藏'],
+  upFives: ['朏魄含光', '霜结的誓金枝'],
+  upFours: ['便携动力锯', '测距规', '祭礼剑', '西风长枪', '昭心'],
   charted: null,
 }
 
