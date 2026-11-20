@@ -114,7 +114,7 @@ export const DEFAULT_FOUR_PROFILES: readonly FourProfile[] = [
   { name: '塔利雅', title: '颂礼祝祭', element: '水' },
   { name: '爱诺', title: '妙械咣咣铛', element: '水' },
   { name: '雅珂达', title: '系风攘影', element: '风' },
-  { name: '叶洛亚', title: '魇夜燃心', element: '岩' },
+  { name: '叶洛亚', title: '魇夜燃芯', element: '岩' },
   { name: '布伦妮', title: '稚梦归心', element: '风' },
   { name: '阿罗夏', title: '疾掠弋缇', element: '雷' },
   { name: '瓦列里', title: '霆骇军垒', element: '雷' },
@@ -142,10 +142,7 @@ export function mergeCatalog(extra: CharacterCatalog): CharacterCatalog {
   }
   for (const item of extra.fours) {
     const index = fours.findIndex((entry) => entry.name === item.name)
-    if (index >= 0) {
-      fours[index] = { ...item }
-      continue
-    }
+    if (index >= 0) continue
     if (fiveNames.has(item.name)) continue
     fours.push(item)
     fourNames.add(item.name)
@@ -157,11 +154,7 @@ export function catalogExtras(catalog: CharacterCatalog): CharacterCatalog {
   const defaultFives = new Set(DEFAULT_FIVE_PROFILES.map((item) => item.name))
   return {
     fives: catalog.fives.filter((item) => !defaultFives.has(item.name)),
-    fours: catalog.fours.filter((item) => {
-      const builtIn = DEFAULT_FOUR_PROFILES.find((entry) => entry.name === item.name)
-      if (!builtIn) return true
-      return builtIn.title !== item.title || builtIn.element !== item.element
-    }),
+    fours: catalog.fours.filter((item) => !DEFAULT_FOUR_PROFILES.some((entry) => entry.name === item.name)),
   }
 }
 

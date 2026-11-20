@@ -1,4 +1,4 @@
-import { mergeCatalog } from '../data/catalog.ts'
+import { findFive, findFour, mergeCatalog } from '../data/catalog.ts'
 import { defaultPool } from '../data/banner.ts'
 import { defaultWeaponPool, emptyRosterEdits, weaponRarityOf } from '../data/weapons.ts'
 import { createWishState } from './gacha.ts'
@@ -49,6 +49,19 @@ function item(value: unknown, fallback: NamedItem): NamedItem {
     name,
     title: text(raw.title).trim(),
     element: text(raw.element).trim(),
+  }
+}
+
+/** 已登记角色的称号和元素以角色记录为准，存档里的旧称号不会继续显示。 */
+export function poolWithProfiles(pool: PoolConfig, catalog: CharacterCatalog): PoolConfig {
+  const five = findFive(catalog, pool.upFive.name)
+  return {
+    eventName: five?.eventName || pool.eventName,
+    upFive: five ? { name: five.name, title: five.title, element: five.element } : pool.upFive,
+    upFours: pool.upFours.map((item) => {
+      const four = findFour(catalog, item.name)
+      return four ? { name: four.name, title: four.title, element: four.element } : item
+    }) as PoolConfig['upFours'],
   }
 }
 
@@ -325,10 +338,11 @@ export function loadSave(): SaveData {
     const raw = localStorage.getItem(KEY)
     if (!raw) return fresh
     const data = JSON.parse(raw) as Partial<SaveData>
+    const catalog = sanitizeCatalog(data.catalog)
     return {
       state: sanitizeState(data.state),
-      pool: sanitizePool(data.pool),
-      catalog: sanitizeCatalog(data.catalog),
+      pool: poolWithProfiles(sanitizePool(data.pool), catalog),
+      catalog,
       weaponState: sanitizeWeaponState(data.weaponState),
       weaponPool: sanitizeWeaponPool(data.weaponPool),
       roster: sanitizeRoster(data.roster),

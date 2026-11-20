@@ -14,6 +14,7 @@ import {
   selectableFourWeapons,
 } from '../data/weapons.ts'
 import { createWishState, grantWeapon, pullOnce, refinementStacks } from './gacha.ts'
+import { poolWithProfiles } from './storage.ts'
 import { CHARACTER_UP_EXPECTED, CHARACTER_UP_FIRST_EXPECTED, WEAPON_CHARTED_EXPECTED, characterLuck, weaponLuck } from './luck.ts'
 import { createStandardState, pullStandardOnce } from './standardGacha.ts'
 import { createWeaponState, pullWeaponOnce } from './weaponGacha.ts'
@@ -285,6 +286,19 @@ function testBuiltinTitles(): void {
   assert(catalog.fives.length === 61, '限定五星记录数量')
   assert(defaultPool.upFive.name === '兹白', '默认五星 UP 应为兹白')
   assert(defaultPool.upFours.map((item) => item.name).join(',') === '叶洛亚,爱诺,凝光', '默认四星 UP 应为叶洛亚、爱诺、凝光')
+  const illuga = catalog.fours.find((item) => item.name === '叶洛亚')
+  assert(illuga?.title === '魇夜燃芯' && illuga.element === '岩', '叶洛亚称号应为魇夜燃芯')
+  const stale = mergeCatalog({ fives: [], fours: [{ name: '叶洛亚', title: '魇夜燃心', element: '岩' }] })
+  assert(stale.fours.find((item) => item.name === '叶洛亚')?.title === '魇夜燃芯', '存档里的旧称号不能覆盖叶洛亚')
+  const aligned = poolWithProfiles({
+    ...defaultPool,
+    upFours: [
+      { name: '叶洛亚', title: '魇夜燃心', element: '岩' },
+      defaultPool.upFours[1],
+      defaultPool.upFours[2],
+    ],
+  }, catalog)
+  assert(aligned.upFours[0]?.title === '魇夜燃芯', '卡池展示应使用叶洛亚的登记称号')
 }
 
 function testStandardBanner(): void {
