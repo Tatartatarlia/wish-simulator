@@ -3,6 +3,7 @@ import { addWeapon, deleteWeapon } from '../data/roster.ts'
 import {
   WEAPON_TYPES,
   buildWeaponPool,
+  defaultWeaponPool,
   selectableFiveWeapons,
   selectableFourWeapons,
   threeStarWeapons,
@@ -62,6 +63,13 @@ function WeaponNameField({
 
 function namesOf(config: WeaponPoolConfig): string[] {
   return [...config.upFives, ...config.upFours]
+}
+
+function isDefaultWeaponPool(config: WeaponPoolConfig): boolean {
+  return config.eventName === defaultWeaponPool.eventName
+    && config.charted === defaultWeaponPool.charted
+    && config.upFives.join('\0') === defaultWeaponPool.upFives.join('\0')
+    && config.upFours.join('\0') === defaultWeaponPool.upFours.join('\0')
 }
 
 export function WeaponDetailModal({
@@ -140,6 +148,23 @@ export function WeaponDetailModal({
     }
     if (next.charted !== pool.charted) {
       setError('')
+      setPending(next)
+      return
+    }
+    apply(next)
+  }
+
+  const restoreDefault = () => {
+    const next: WeaponPoolConfig = {
+      eventName: defaultWeaponPool.eventName,
+      upFives: [...defaultWeaponPool.upFives] as WeaponPoolConfig['upFives'],
+      upFours: [...defaultWeaponPool.upFours] as WeaponPoolConfig['upFours'],
+      charted: defaultWeaponPool.charted,
+    }
+    setError('')
+    if (next.charted !== pool.charted) {
+      setDraft(next)
+      setSaved(false)
       setPending(next)
       return
     }
@@ -245,18 +270,21 @@ export function WeaponDetailModal({
         {error && <p className="form-error">{error}</p>}
         {pending && (
           <p className="fine">
-            定轨将从「{pool.charted ?? '不定轨'}」改为「{pending.charted ?? '不定轨'}」。命定值会归零。确定保存吗？
+            {isDefaultWeaponPool(pending)
+              ? '恢复默认会把本期武器 UP 改回初始配置，并取消定轨。命定值会归零。角色池、抽数和仓库不变。确定吗？'
+              : `定轨将从「${pool.charted ?? '不定轨'}」改为「${pending.charted ?? '不定轨'}」。命定值会归零。确定保存吗？`}
           </p>
         )}
         <div className="editor-actions">
           {pending ? (
             <>
               <button type="button" className="text-btn solid" onClick={() => apply(pending)}>确定保存</button>
-              <button type="button" className="text-btn" onClick={() => setPending(null)}>先不改</button>
+              <button type="button" className="text-btn" onClick={() => { if (pending && isDefaultWeaponPool(pending)) setDraft(pool); setPending(null) }}>先不改</button>
             </>
           ) : (
             <button type="button" className="text-btn solid" onClick={save}>{saved ? '已保存' : '保存武器池'}</button>
           )}
+          <button type="button" className="text-btn" onClick={restoreDefault}>恢复默认</button>
         </div>
       </section>
 
